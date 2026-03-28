@@ -105,7 +105,10 @@ function TabButton({
 export default function TabsLayout() {
   return (
     <Tabs
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ 
+        headerShown: false,
+        animation: "shift", // or "slide_from_right" / "fade"
+      }}
       tabBar={({ state, navigation }) => (
         <View style={styles.tabBar}>
           {TAB_CONFIG.map((tab, index) => {

@@ -63,7 +63,7 @@ export default function AppSelect({
   const openSheet = () => {
     setVisible(true);
     arrowRotation.value = withTiming(180, { duration: 250 });
-    sheetTranslateY.value = withSpring(0, { damping: 20, stiffness: 200 });
+    sheetTranslateY.value = withTiming(0, { duration: 300 });
   };
 
   const closeSheet = () => {
