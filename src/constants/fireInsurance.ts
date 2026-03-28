@@ -54,4 +54,4 @@ export const PREMIUM_RATE_MATRIX: Record<RiskClass, Record<OccupancyType, number
 // ─────────────────────────────────────────────────────────────────────────────
 // RSD (Riots, Strikes & Damage) surcharge rate (%)
 // ─────────────────────────────────────────────────────────────────────────────
-export const RSD_SURCHARGE_RATE = 0.075; // 0.075% of sum insured
+export const RSD_SURCHARGE_RATE = 0.13; // 0.13% of sum insured

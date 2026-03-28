@@ -16,22 +16,24 @@ export interface PremisesEntry {
   id: string;
   riskClass: RiskClass | null;
   occupancyType: OccupancyType | null;
-  premiumRate: number; // auto-filled from matrix, e.g. 0.15 (%)
-  sumInsured: string;  // BDT amount as string (user input)
+  premiumRate: string; // editable, can be manually overridden
+  sumInsured: string;  // can be percentage (0-100) or BDT amount
+  isPercentage: boolean; // toggle for SI type
+  netPremium?: number; // Result for this individual premises
 }
 
 export interface PremiumResult {
-  basePremium: number;        // Sum of (sumInsured × premiumRate%) for all premises
-  rsdSurcharge: number;       // RSD surcharge if enabled
-  totalPremium: number;       // basePremium + rsdSurcharge
-  totalSumInsured: number;    // Total BDT across all premises
-  vatAmount: number;          // Placeholder VAT (demo)
-  netPremium: number;         // totalPremium + vatAmount (demo)
+  basePremium: number;        // Sum of (sumInsured * (rate / 100))
+  rsdSurcharge: number;       // Surcharge (sumInsured * (0.13 / 100))
+  totalNetPremium: number;    // basePremium + rsdSurcharge
+  totalSumInsured: number;    // TSI = Limit + Tolerance
+  vatAmount: number;          // 15% of totalNetPremium
+  totalPremium: number;       // totalNetPremium + vatAmount
+  premisesResults: { id: string; netPremium: number; sumInsured: number; rate: number }[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Get premium rate from the matrix
-// Returns the rate as a percentage number (e.g. 0.15)
+// Get premium rate from the matrix (returns as number, e.g. 0.15)
 // ─────────────────────────────────────────────────────────────────────────────
 export function getPremiumRate(
   riskClass: RiskClass | null,
@@ -42,83 +44,75 @@ export function getPremiumRate(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Calculate the maximum allowed total sum insured across all premises
-// = limitAmount × (1 - bankTolerance / 100)
+// Calculate Total Sum Insured (TSI)
+// TSI = Limit Amount + Bank Tolerance %
+// Example: 500,000 + 10% = 550,000
 // ─────────────────────────────────────────────────────────────────────────────
-export function getMaxSumInsured(
+export function calculateTSI(
   limitAmount: number,
   bankTolerance: number
 ): number {
   if (limitAmount <= 0) return 0;
-  return limitAmount * (1 - bankTolerance / 100);
+  return limitAmount * (1 + bankTolerance / 100);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Validate that total sum insured across all premises does not exceed cap
-// ─────────────────────────────────────────────────────────────────────────────
-export function validateSumInsured(
-  premises: PremisesEntry[],
-  limitAmount: number,
-  bankTolerance: number
-): { valid: boolean; message: string; cap: number; total: number } {
-  const cap = getMaxSumInsured(limitAmount, bankTolerance);
-  const total = premises.reduce(
-    (sum, p) => sum + (parseFloat(p.sumInsured) || 0),
-    0
-  );
-
-  if (total > cap && cap > 0) {
-    return {
-      valid: false,
-      message: `Total sum insured (BDT ${formatCurrency(total)}) exceeds cap of BDT ${formatCurrency(cap)}`,
-      cap,
-      total,
-    };
-  }
-  return { valid: true, message: "", cap, total };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Main premium calculation
-// Formula will be updated once the user provides the exact formula.
-// Currently uses: Premium = SumInsured × (premiumRate / 100)
-//                 RSD = SumInsured × (0.075 / 100) if enabled
+// Main premium calculation based on formula.md
+// Formula: 
+// Premises Net Premium = (Sum Insured) * (Premises Rate + RSD Rate)%
+// Total Premium = Total Net Premium + 15% VAT
 // ─────────────────────────────────────────────────────────────────────────────
 export function calculatePremium(
   premises: PremisesEntry[],
+  limitAmount: number,
+  bankTolerance: number,
   rsdEnabled: boolean
 ): PremiumResult {
-  let basePremium = 0;
-  let totalSumInsured = 0;
+  const tsi = calculateTSI(limitAmount, bankTolerance);
+  let totalNetPremium = 0;
+  let basePremiumSum = 0;
+  let rsdSurchargeSum = 0;
+  
+  const premisesResults = premises.map((p) => {
+    const inputVal = parseFloat(p.sumInsured) || 0;
+    const rateVal = parseFloat(p.premiumRate) || 0;
+    const rsdRate = rsdEnabled ? RSD_SURCHARGE_RATE / 100 : 0;
+    
+    // Premises sum insured based on mode
+    const premisesSI = p.isPercentage ? tsi * (inputVal / 100) : inputVal;
+    
+    // Premises net premium calculation
+    // Net Premium = SI * (Rate% + RSD%)
+    const premisesNet = premisesSI * (rateVal / 100 + rsdRate);
+    
+    totalNetPremium += premisesNet;
+    basePremiumSum += premisesSI * (rateVal / 100);
+    rsdSurchargeSum += premisesSI * rsdRate;
 
-  for (const p of premises) {
-    const si = parseFloat(p.sumInsured) || 0;
-    totalSumInsured += si;
-    basePremium += si * (p.premiumRate / 100);
-  }
+    return {
+      id: p.id,
+      netPremium: premisesNet,
+      sumInsured: premisesSI,
+      rate: rateVal,
+    };
+  });
 
-  const rsdSurcharge = rsdEnabled
-    ? totalSumInsured * (RSD_SURCHARGE_RATE / 100)
-    : 0;
-
-  const totalPremium = basePremium + rsdSurcharge;
-
-  // Demo VAT at 15% — will be updated with real formula later
-  const vatAmount = totalPremium * 0.15;
-  const netPremium = totalPremium + vatAmount;
+  const vatAmount = totalNetPremium * 0.15;
+  const totalPremium = totalNetPremium + vatAmount;
 
   return {
-    basePremium,
-    rsdSurcharge,
-    totalPremium,
-    totalSumInsured,
+    basePremium: basePremiumSum,
+    rsdSurcharge: rsdSurchargeSum,
+    totalNetPremium,
+    totalSumInsured: tsi,
     vatAmount,
-    netPremium,
+    totalPremium,
+    premisesResults,
   };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Format a number as BDT currency string
+// Format individual components for display
 // ─────────────────────────────────────────────────────────────────────────────
 export function formatCurrency(amount: number): string {
   return amount.toLocaleString("en-BD", {

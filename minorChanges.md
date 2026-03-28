@@ -1,0 +1,6 @@
+- For android Can't see content becouse of keybord. So fix it.
+- Don't use shortcut from instade show full abbrivation. For example use "Total Sum Insured" instead of "TSI".
+- Sum insured mode default should be percentage not amount first.
+- Make the delete button for premises more beautiful.
+- Remove unnecessary bouncy animation from selection of items like risk classification, occupancy type etc. instade include slide in/ slide out from bottom animation. also add this animation to switch between pages.
+- Also add a reset button.
