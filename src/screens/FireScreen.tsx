@@ -1,10 +1,10 @@
 /**
  * FireScreen — Main Fire Insurance Premium Calculator screen.
  *
- * Updated with UI refinements:
- * - AppSegmentedControl for Risk Classification (matches screenshot).
- * - Label icons for Limit Amount and Occupancy Type.
- * - Dynamic premises labels and focus flow.
+ * Updated with:
+ * - AppToggle for "Calculate By" selection (Smooth Timing animation).
+ * - AppSlider with "Shield Heart" icon for RSD Coverage.
+ * - Unified smooth animation across all selectors.
  */
 
 import React, { useCallback, useRef, useState } from "react";
@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppInput from "../components/ui/AppInput";
 import AppSelect, { AppSelectRef } from "../components/ui/AppSelect";
 import AppSegmentedControl from "../components/ui/AppSegmentedControl";
+import AppToggle from "../components/ui/AppToggle";
 import AppButton from "../components/ui/AppButton";
 import AppSlider from "../components/ui/AppSlider";
 import SectionCard from "../components/ui/SectionCard";
@@ -56,7 +57,7 @@ function generateId(): string {
 function newPremises(): PremisesEntry {
   return {
     id: generateId(),
-    riskClass: "CLASS_I", // Default to Class I
+    riskClass: "CLASS_I",
     occupancyType: null,
     premiumRate: "",
     sumInsured: "",
@@ -113,10 +114,6 @@ function PremisesCard({
     }, 100);
   };
 
-  const toggleMode = () => {
-    onUpdate(entry.id, { isPercentage: !entry.isPercentage });
-  };
-
   return (
     <Animated.View entering={FadeInDown.duration(300).springify()}>
       <SectionCard title={cardTitle} accent style={styles.premisesCard}>
@@ -131,7 +128,6 @@ function PremisesCard({
           </Pressable>
         )}
 
-        {/* Risk Classification Segmented Control */}
         <AppSegmentedControl
           label="RISK CLASSIFICATION"
           options={RISK_CLASSES}
@@ -161,23 +157,16 @@ function PremisesCard({
           onSubmitEditing={() => sumRef.current?.focus()}
         />
 
-        <View style={styles.modeToggleRow}>
-          <Typography variant="label">Calculate By:</Typography>
-          <View style={styles.modeToggle}>
-            <Pressable 
-              onPress={toggleMode}
-              style={[styles.modeBtn, entry.isPercentage && styles.modeBtnActive]}
-            >
-              <Typography variant="caption" style={entry.isPercentage ? styles.modeTextActive : styles.modeText}>%</Typography>
-            </Pressable>
-            <Pressable 
-              onPress={toggleMode}
-              style={[styles.modeBtn, !entry.isPercentage && styles.modeBtnActive]}
-            >
-              <Typography variant="caption" style={!entry.isPercentage ? styles.modeTextActive : styles.modeText}>Amount</Typography>
-            </Pressable>
-          </View>
-        </View>
+        {/* Updated "Calculate By" with AppToggle for smooth sliding */}
+        <AppToggle
+          label="Calculate By:"
+          value={entry.isPercentage}
+          options={[
+            { label: "%", value: true },
+            { label: "Amount", value: false },
+          ]}
+          onChange={(newVal) => onUpdate(entry.id, { isPercentage: newVal })}
+        />
 
         <AppInput
           ref={sumRef}
@@ -196,7 +185,7 @@ function PremisesCard({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main FireScreen Component
+// FireScreen Component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function FireScreen() {
   const insets = useSafeAreaInsets();
@@ -267,7 +256,6 @@ export default function FireScreen() {
       Alert.alert("Validation Error", "Total Premises Sum Insured must equal Total Sum Insured.");
       return;
     }
-
     setIsCalculating(true);
     setTimeout(() => {
       const res = calculatePremium(premises, limitNum, toleranceNum, rsdEnabled);
@@ -305,28 +293,8 @@ export default function FireScreen() {
         >
           <Animated.View entering={FadeInDown.duration(350).delay(100)}>
             <SectionCard title="Basic Information" accent>
-              <AppInput
-                ref={limitRef}
-                label="Limit Amount"
-                labelIcon="cash-outline"
-                value={limitAmount}
-                onChangeText={(v) => { setLimitAmount(v); setResult(null); }}
-                prefix="BDT"
-                placeholder="500,000"
-                hint="Min 1,0,0,000 BDT"
-                returnKeyType="next"
-                onSubmitEditing={() => toleranceRef.current?.focus()}
-              />
-              <AppInput
-                ref={toleranceRef}
-                label="Bank Tolerance"
-                value={bankTolerance}
-                onChangeText={(v) => { setBankTolerance(v); setResult(null); }}
-                suffix="%"
-                placeholder="10"
-                hint={limitNum > 0 ? `Total Sum Insured: BDT ${formatCurrency(tsi)}` : "Added to limit"}
-                returnKeyType="next"
-              />
+              <AppInput ref={limitRef} label="Limit Amount" labelIcon="cash-outline" value={limitAmount} onChangeText={(v) => { setLimitAmount(v); setResult(null); }} prefix="BDT" placeholder="500,000" hint="Min 1,0,0,000 BDT" returnKeyType="next" onSubmitEditing={() => toleranceRef.current?.focus()} />
+              <AppInput ref={toleranceRef} label="Bank Tolerance" value={bankTolerance} onChangeText={(v) => { setBankTolerance(v); setResult(null); }} suffix="%" placeholder="10" hint={limitNum > 0 ? `Total Sum Insured: BDT ${formatCurrency(tsi)}` : "Added to limit"} returnKeyType="next" />
             </SectionCard>
           </Animated.View>
 
@@ -339,25 +307,15 @@ export default function FireScreen() {
 
           {premises.map((entry, index) => {
             if (!premisesRefs.current[entry.id]) {
-              premisesRefs.current[entry.id] = {
-                occ: React.createRef<AppSelectRef>(),
-                rate: React.createRef<TextInput>(),
-                sum: React.createRef<TextInput>(),
-              };
+              premisesRefs.current[entry.id] = { occ: React.createRef<AppSelectRef>(), rate: React.createRef<TextInput>(), sum: React.createRef<TextInput>() };
             }
             const refs = premisesRefs.current[entry.id]!;
             return (
               <PremisesCard
-                key={entry.id}
-                entry={entry}
-                index={index}
-                totalCount={premises.length}
-                tsi={tsi}
-                onUpdate={handleUpdatePremises}
-                onRemove={handleRemovePremises}
-                occRef={refs.occ}
-                rateRef={refs.rate}
-                sumRef={refs.sum}
+                key={entry.id} entry={entry} index={index}
+                totalCount={premises.length} tsi={tsi}
+                onUpdate={handleUpdatePremises} onRemove={handleRemovePremises}
+                occRef={refs.occ} rateRef={refs.rate} sumRef={refs.sum}
               />
             );
           })}
@@ -368,8 +326,9 @@ export default function FireScreen() {
             <AppSlider
               value={rsdEnabled}
               onChange={(v) => { setRsdEnabled(v); setResult(null); }}
-              label="Riots, Strikes & Damage"
-              description="Coverage at 0.13% rate"
+              label="RSD Coverage" // Matches your screenshot
+              description="Riots, Strikes & Damage protection"
+              showProtectionIcon={true} // New custom design
             />
           </SectionCard>
 
@@ -380,16 +339,13 @@ export default function FireScreen() {
             </View>
           </View>
 
-          {result && (
-            <ResultCard result={result} premises={premises} />
-          )}
+          {result && <ResultCard result={result} premises={premises} />}
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-// ResultCard component (keeping it here for code brevity)
 function ResultRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.resultRow}>
@@ -408,11 +364,9 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
           <Ionicons name="receipt-outline" size={28} color="#F97316" />
         </View>
         <ResultRow label="Total Sum Insured" value={`BDT ${formatCurrency(result.totalSumInsured)}`} />
-        
         <View style={styles.breakdownHeader}>
           <Typography variant="caption" style={styles.breakdownLabel}>Premium Breakdown</Typography>
         </View>
-        
         {result.premisesResults.map((pr, idx) => {
           const occLabel = getLabel(premises[idx]?.occupancyType, OCCUPANCY_TYPES);
           const label = premises[idx]?.occupancyType ? `${occLabel} ${idx + 1}` : `Premises ${idx + 1}`;
@@ -427,8 +381,8 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
           );
         })}
         <View style={styles.divider} />
-        <ResultRow label="Total Net Premium" value={`BDT ${formatCurrency(result.totalNetPremium)}`} />
-        <ResultRow label="VAT (15%)" value={`BDT ${formatCurrency(result.vatAmount)}`} />
+        <ResultRow label="Total Net Premium" value={`BDT {formatCurrency(result.totalNetPremium)}`} />
+        <ResultRow label="VAT (15%)" value={`BDT {formatCurrency(result.vatAmount)}`} />
         <View style={styles.divider} />
         <View style={styles.netPremiumRow}>
           <Typography variant="subheading" style={styles.netLabel}>Total Premium Payable</Typography>
@@ -458,12 +412,6 @@ const styles = StyleSheet.create({
   premisesCard: { position: "relative" },
   removeBtnContainer: { position: "absolute", top: 12, right: 12, zIndex: 10 },
   removeBtnCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(239,68,68,0.1)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(239,68,68,0.2)" },
-  modeToggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 14, paddingVertical: 8, borderTopWidth: 1, borderTopColor: "#1F2937" },
-  modeToggle: { flexDirection: "row", backgroundColor: "#0F172A", borderRadius: 8, overflow: "hidden", borderWidth: 1, borderColor: "#2D3748", padding: 2 },
-  modeBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
-  modeBtnActive: { backgroundColor: "#F97316" },
-  modeText: { color: "#9CA3AF" },
-  modeTextActive: { color: "#fff", fontFamily: "Inter_600SemiBold" },
   rsdCard: { marginTop: 4 },
   actionButtons: { gap: 12, marginTop: 8 },
   resetButtonWrap: { marginTop: 4 },
