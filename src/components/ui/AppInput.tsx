@@ -1,7 +1,7 @@
 /**
  * AppInput — Reusable number/text input with prefix & suffix symbols.
  * Supports animated focus ring (border glow), error state, and read-only mode.
- * Updated with React.forwardRef for programmatic focus.
+ * Updated with labelIcon and forwardRef.
  */
 
 import React, { useImperativeHandle, useRef, useState } from "react";
@@ -17,6 +17,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
 import Typography from "./Typography";
 
 interface AppInputProps extends Omit<TextInputProps, "value" | "onChangeText"> {
@@ -25,6 +26,7 @@ interface AppInputProps extends Omit<TextInputProps, "value" | "onChangeText"> {
   onChangeText: (text: string) => void;
   prefix?: string;      // e.g. "BDT"
   suffix?: string;      // e.g. "%"
+  labelIcon?: keyof typeof Ionicons.glyphMap; // Icon next to the label
   error?: string;
   hint?: string;
   readOnly?: boolean;   // Auto-filled fields (e.g. premium rate)
@@ -37,6 +39,7 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(({
   onChangeText,
   prefix,
   suffix,
+  labelIcon,
   error,
   hint,
   readOnly = false,
@@ -74,11 +77,9 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(({
     props.onBlur?.(e);
   };
 
-  // Strip non-numeric characters (allow one decimal point)
   const handleChange = (text: string) => {
     if (numericOnly) {
       const cleaned = text.replace(/[^0-9.]/g, "");
-      // Prevent multiple decimal points
       const parts = cleaned.split(".");
       const sanitized = parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : cleaned;
       onChangeText(sanitized);
@@ -93,10 +94,15 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(({
       onPress={() => !readOnly && internalRef.current?.focus()}
       accessibilityLabel={label}
     >
-      {/* Field label */}
-      <Typography variant="label" style={styles.label}>
-        {label}
-      </Typography>
+      {/* Label with optional Icon */}
+      <View style={styles.labelContainer}>
+        {labelIcon && (
+          <Ionicons name={labelIcon} size={14} color="#F97316" style={styles.icon} />
+        )}
+        <Typography variant="label" style={styles.label}>
+          {label}
+        </Typography>
+      </View>
 
       {/* Input container with animated border */}
       <Animated.View
@@ -106,7 +112,6 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(({
           readOnly && styles.readOnly,
         ]}
       >
-        {/* Prefix symbol (e.g. BDT) */}
         {prefix && (
           <View style={styles.adornment}>
             <Typography variant="label" style={styles.adornmentText}>
@@ -115,7 +120,6 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(({
           </View>
         )}
 
-        {/* Text input */}
         <TextInput
           ref={internalRef}
           style={[styles.input, prefix && styles.inputWithPrefix]}
@@ -131,7 +135,6 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(({
           {...props}
         />
 
-        {/* Suffix symbol (e.g. %) */}
         {suffix && (
           <View style={styles.adornment}>
             <Typography variant="label" style={styles.adornmentText}>
@@ -140,7 +143,6 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(({
           </View>
         )}
 
-        {/* Read-only lock indicator */}
         {readOnly && (
           <View style={styles.adornment}>
             <Typography variant="caption" style={{ color: "#F97316" }}>
@@ -150,7 +152,7 @@ const AppInput = React.forwardRef<TextInput, AppInputProps>(({
         )}
       </Animated.View>
 
-      {/* Error message */}
+      {/* Error / Hint message */}
       {error ? (
         <Typography variant="caption" style={styles.errorText}>
           {error}
@@ -170,8 +172,16 @@ const styles = StyleSheet.create({
   wrapper: {
     marginBottom: 12,
   },
-  label: {
+  labelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 6,
+    gap: 6,
+  },
+  icon: {
+    marginTop: -1,
+  },
+  label: {
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },

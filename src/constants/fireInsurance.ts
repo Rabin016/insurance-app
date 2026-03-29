@@ -7,9 +7,9 @@
 // Risk Classification Options
 // ─────────────────────────────────────────────────────────────────────────────
 export const RISK_CLASSES = [
-  { label: "Class I", value: "CLASS_I" },
-  { label: "Class II", value: "CLASS_II" },
-  { label: "Class III", value: "CLASS_III" },
+  { label: "Class I", subLabel: "PREMIUM", value: "CLASS_I" },
+  { label: "Class II", subLabel: "STANDARD", value: "CLASS_II" },
+  { label: "Class III", subLabel: "BASIC", value: "CLASS_III" },
 ] as const;
 
 export type RiskClass = (typeof RISK_CLASSES)[number]["value"];

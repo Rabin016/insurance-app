@@ -1,7 +1,7 @@
 /**
  * AppSelect — Reusable dropdown selector.
  * Opens a bottom-sheet style modal with a FlatList of options.
- * Updated with forwardRef to expose an 'open' method.
+ * Updated with labelIcon and forwardRef.
  */
 
 import React, { useImperativeHandle, useState } from "react";
@@ -36,6 +36,7 @@ interface AppSelectProps {
   options: SelectOption[];
   value: string | null;
   onChange: (value: string) => void;
+  labelIcon?: keyof typeof Ionicons.glyphMap;
   placeholder?: string;
   error?: string;
 }
@@ -45,14 +46,13 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
   options,
   value,
   onChange,
+  labelIcon,
   placeholder = "Select an option",
   error,
 }, ref) => {
   const [visible, setVisible] = useState(false);
 
-  // Arrow rotation animation
   const arrowRotation = useSharedValue(0);
-  // Sheet slide animation
   const sheetTranslateY = useSharedValue(300);
 
   const arrowStyle = useAnimatedStyle(() => ({
@@ -75,7 +75,6 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
     setTimeout(() => setVisible(false), 260);
   };
 
-  // Expose methods to parent
   useImperativeHandle(ref, () => ({
     open: openSheet,
     close: closeSheet,
@@ -90,10 +89,15 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
 
   return (
     <View style={styles.wrapper}>
-      {/* Field label */}
-      <Typography variant="label" style={styles.label}>
-        {label}
-      </Typography>
+      {/* Label with optional Icon */}
+      <View style={styles.labelContainer}>
+        {labelIcon && (
+          <Ionicons name={labelIcon} size={14} color="#F97316" style={styles.icon} />
+        )}
+        <Typography variant="label" style={styles.label}>
+          {label}
+        </Typography>
+      </View>
 
       {/* Trigger button */}
       <Pressable
@@ -168,8 +172,22 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
 export default AppSelect;
 
 const styles = StyleSheet.create({
-  wrapper: { marginBottom: 12 },
-  label: { marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 },
+  wrapper: {
+    marginBottom: 12,
+  },
+  labelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+    gap: 6,
+  },
+  icon: {
+    marginTop: -1,
+  },
+  label: {
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
   trigger: {
     flexDirection: "row",
     alignItems: "center",
@@ -182,25 +200,77 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     minHeight: 50,
   },
-  triggerError: { borderColor: "#EF4444" },
-  triggerText: { color: "#F9FAFB", fontFamily: "Inter_500Medium", flex: 1 },
-  placeholder: { color: "#4B5563" },
-  errorText: { color: "#EF4444", marginTop: 4, marginLeft: 2 },
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)" },
+  triggerError: {
+    borderColor: "#EF4444",
+  },
+  triggerText: {
+    color: "#F9FAFB",
+    fontFamily: "Inter_500Medium",
+    flex: 1,
+  },
+  placeholder: {
+    color: "#4B5563",
+  },
+  errorText: {
+    color: "#EF4444",
+    marginTop: 4,
+    marginLeft: 2,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.65)",
+  },
   sheet: {
     position: "absolute",
-    bottom: 0, left: 0, right: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: "#1E293B",
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 20, paddingBottom: 32, paddingTop: 12,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+    paddingTop: 12,
     maxHeight: "60%",
     elevation: 20,
   },
-  handle: { width: 40, height: 4, borderRadius: 4, backgroundColor: "#374151", alignSelf: "center", marginBottom: 16 },
-  sheetTitle: { marginBottom: 16, color: "#F9FAFB" },
-  option: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 8 },
-  optionSelected: { backgroundColor: "rgba(249,115,22,0.1)", paddingHorizontal: 12 },
-  optionText: { color: "#D1D5DB", fontFamily: "Inter_400Regular", fontSize: 15 },
-  optionTextSelected: { color: "#F97316", fontFamily: "Inter_600SemiBold", fontSize: 15 },
-  separator: { height: 1, backgroundColor: "#1F2937", marginHorizontal: 4 },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: "#374151",
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    marginBottom: 16,
+    color: "#F9FAFB",
+  },
+  option: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+  },
+  optionSelected: {
+    backgroundColor: "rgba(249,115,22,0.1)",
+    paddingHorizontal: 12,
+  },
+  optionText: {
+    color: "#D1D5DB",
+    fontFamily: "Inter_400Regular",
+    fontSize: 15,
+  },
+  optionTextSelected: {
+    color: "#F97316",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: "#1F2937",
+    marginHorizontal: 4,
+  },
 });
