@@ -2,9 +2,9 @@
  * FireScreen — Main Fire Insurance Premium Calculator screen.
  *
  * Updated with:
- * - AppToggle for "Calculate By" selection (Smooth Timing animation).
- * - AppSlider with "Shield Heart" icon for RSD Coverage.
- * - Unified smooth animation across all selectors.
+ * - ResultCard fixes: Added missing ${} for template literals.
+ * - Alignment fixes: Removed flex:1 from labels to prevent vertical stacking.
+ * - Terminology match: Changed to "Net Premium" and "Total Amount".
  */
 
 import React, { useCallback, useRef, useState } from "react";
@@ -157,7 +157,6 @@ function PremisesCard({
           onSubmitEditing={() => sumRef.current?.focus()}
         />
 
-        {/* Updated "Calculate By" with AppToggle for smooth sliding */}
         <AppToggle
           label="Calculate By:"
           value={entry.isPercentage}
@@ -185,7 +184,7 @@ function PremisesCard({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FireScreen Component
+// Main FireScreen Component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function FireScreen() {
   const insets = useSafeAreaInsets();
@@ -326,9 +325,9 @@ export default function FireScreen() {
             <AppSlider
               value={rsdEnabled}
               onChange={(v) => { setRsdEnabled(v); setResult(null); }}
-              label="RSD Coverage" // Matches your screenshot
+              label="RSD Coverage"
               description="Riots, Strikes & Damage protection"
-              showProtectionIcon={true} // New custom design
+              showProtectionIcon={true}
             />
           </SectionCard>
 
@@ -346,6 +345,9 @@ export default function FireScreen() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ResultCard Detail Components
+// ─────────────────────────────────────────────────────────────────────────────
 function ResultRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.resultRow}>
@@ -357,6 +359,7 @@ function ResultRow({ label, value }: { label: string; value: string }) {
 
 function ResultCard({ result, premises }: { result: PremiumResult; premises: PremisesEntry[] }) {
   const roundedTotal = Math.round(result.totalPremium);
+  
   return (
     <Animated.View entering={SlideInDown.duration(400).springify()}>
       <SectionCard title="Calculation Result" subtitle="Rounded to nearest BDT" style={styles.resultCard}>
@@ -367,6 +370,7 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
         <View style={styles.breakdownHeader}>
           <Typography variant="caption" style={styles.breakdownLabel}>Premium Breakdown</Typography>
         </View>
+        
         {result.premisesResults.map((pr, idx) => {
           const occLabel = getLabel(premises[idx]?.occupancyType, OCCUPANCY_TYPES);
           const label = premises[idx]?.occupancyType ? `${occLabel} ${idx + 1}` : `Premises ${idx + 1}`;
@@ -381,11 +385,14 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
           );
         })}
         <View style={styles.divider} />
-        <ResultRow label="Total Net Premium" value={`BDT {formatCurrency(result.totalNetPremium)}`} />
-        <ResultRow label="VAT (15%)" value={`BDT {formatCurrency(result.vatAmount)}`} />
+        
+        {/* Corrected Template Literal Syntax */}
+        <ResultRow label="Net Premium" value={`BDT ${formatCurrency(result.totalNetPremium)}`} />
+        <ResultRow label="VAT (15%)" value={`BDT ${formatCurrency(result.vatAmount)}`} />
+        
         <View style={styles.divider} />
         <View style={styles.netPremiumRow}>
-          <Typography variant="subheading" style={styles.netLabel}>Total Premium Payable</Typography>
+          <Typography variant="subheading" style={styles.netLabel}>Total Amount</Typography>
           <Animated.View entering={ZoomIn.duration(400).delay(200)}>
             <Typography variant="mono" style={{ fontSize: 24, color: "#F97316" }}>BDT {roundedTotal.toLocaleString("en-BD")}</Typography>
           </Animated.View>
@@ -418,8 +425,8 @@ const styles = StyleSheet.create({
   resultCard: { borderColor: "rgba(249,115,22,0.3)", backgroundColor: "#1A1F2E", marginTop: 12 },
   resultIcon: { alignSelf: "center", marginBottom: 16, width: 56, height: 56, borderRadius: 28, backgroundColor: "rgba(249,115,22,0.12)", borderWidth: 1, borderColor: "rgba(249,115,22,0.3)", alignItems: "center", justifyContent: "center" },
   resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8 },
-  resultLabel: { color: "#9CA3AF", flex: 1 },
-  resultValue: { color: "#E5E7EB", fontFamily: "Inter_500Medium" },
+  resultLabel: { color: "#9CA3AF" }, // Removed flex: 1 here
+  resultValue: { color: "#E5E7EB", fontFamily: "Inter_500Medium", textAlign: "right" },
   breakdownHeader: { marginTop: 12, marginBottom: 6 },
   breakdownLabel: { color: "#F97316", textTransform: "uppercase", letterSpacing: 1, fontSize: 11 },
   premisesResultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, paddingHorizontal: 10, backgroundColor: "rgba(15,23,42,0.6)", borderRadius: 10, marginBottom: 6, borderWidth: 1, borderColor: "#1F2937" },
