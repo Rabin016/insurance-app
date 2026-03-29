@@ -10,7 +10,21 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import "../global.css";
+
+// Custom theme to match our app and prevent white flashes
+const AppTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: "#0D1117",
+    card: "#0D1117",
+    text: "#F9FAFB",
+    border: "#1F2937",
+    primary: "#F97316",
+  },
+};
 
 // Keep splash screen visible while fonts load
 SplashScreen.preventAutoHideAsync();
@@ -35,10 +49,11 @@ export default function RootLayout() {
   }
 
   return (
-    // GestureHandlerRootView required for react-native-gesture-handler
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#0D1117" }}>
-      <StatusBar style="light" backgroundColor="#0D1117" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <ThemeProvider value={AppTheme}>
+        <StatusBar style="light" backgroundColor="#0D1117" />
+        <Stack screenOptions={{ headerShown: false }} />
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

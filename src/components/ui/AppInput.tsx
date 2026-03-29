@@ -1,9 +1,10 @@
 /**
  * AppInput — Reusable number/text input with prefix & suffix symbols.
  * Supports animated focus ring (border glow), error state, and read-only mode.
+ * Updated with React.forwardRef for programmatic focus.
  */
 
-import React, { useRef, useState } from "react";
+import React, { useImperativeHandle, useRef, useState } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -30,7 +31,7 @@ interface AppInputProps extends Omit<TextInputProps, "value" | "onChangeText"> {
   numericOnly?: boolean;
 }
 
-export default function AppInput({
+const AppInput = React.forwardRef<TextInput, AppInputProps>(({
   label,
   value,
   onChangeText,
@@ -42,9 +43,12 @@ export default function AppInput({
   numericOnly = true,
   placeholder = "0",
   ...props
-}: AppInputProps) {
+}, ref) => {
   const [focused, setFocused] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const internalRef = useRef<TextInput>(null);
+
+  // Expose internal ref to parent
+  useImperativeHandle(ref, () => internalRef.current!);
 
   // Animated border opacity for focus glow
   const borderGlow = useSharedValue(0);
@@ -58,14 +62,16 @@ export default function AppInput({
     shadowOpacity: borderGlow.value * 0.35,
   }));
 
-  const handleFocus = () => {
+  const handleFocus = (e: any) => {
     setFocused(true);
     borderGlow.value = withTiming(1, { duration: 200 });
+    props.onFocus?.(e);
   };
 
-  const handleBlur = () => {
+  const handleBlur = (e: any) => {
     setFocused(false);
     borderGlow.value = withTiming(0, { duration: 200 });
+    props.onBlur?.(e);
   };
 
   // Strip non-numeric characters (allow one decimal point)
@@ -84,7 +90,7 @@ export default function AppInput({
   return (
     <Pressable
       style={styles.wrapper}
-      onPress={() => !readOnly && inputRef.current?.focus()}
+      onPress={() => !readOnly && internalRef.current?.focus()}
       accessibilityLabel={label}
     >
       {/* Field label */}
@@ -111,7 +117,7 @@ export default function AppInput({
 
         {/* Text input */}
         <TextInput
-          ref={inputRef}
+          ref={internalRef}
           style={[styles.input, prefix && styles.inputWithPrefix]}
           value={value}
           onChangeText={handleChange}
@@ -156,7 +162,9 @@ export default function AppInput({
       ) : null}
     </Pressable>
   );
-}
+});
+
+export default AppInput;
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -175,7 +183,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#2D3748",
     overflow: "hidden",
-    // Focus glow shadow
     shadowColor: "#F97316",
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 8,

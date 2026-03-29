@@ -1,23 +1,25 @@
 /**
  * FireScreen — Main Fire Insurance Premium Calculator screen.
  *
- * Updated with logic from formula.md & user feedback:
- * - KeyboardAvoidingView for Android visibility.
- * - Abbreviations replaced with full terms (Total Sum Insured, Riots, Strikes & Damage).
- * - Default Sum Insured mode is Percentage (true).
- * - Beautiful Trash/Delete button.
- * - Form Reset functionality.
+ * Updated with UI flow and refinements:
+ * - Dynamic premises labels (e.g., "Shop 1") in form and results.
+ * - Progressive focus flow using Enter/Submit keys.
+ * - Reset button repositioned under Calculate.
+ * - Final Premium Payable rounded to whole numbers.
+ * - Dark theme flash fix already applied via root layout.
  */
 
+import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useRef, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
-  Pressable,
-  Platform,
-  KeyboardAvoidingView,
 } from "react-native";
 import Animated, {
   FadeInDown,
@@ -25,12 +27,11 @@ import Animated, {
   SlideInDown,
   ZoomIn,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import AppInput from "../components/ui/AppInput";
-import AppSelect from "../components/ui/AppSelect";
 import AppButton from "../components/ui/AppButton";
+import AppInput from "../components/ui/AppInput";
+import AppSelect, { AppSelectRef } from "../components/ui/AppSelect";
 import AppSlider from "../components/ui/AppSlider";
 import SectionCard from "../components/ui/SectionCard";
 import Typography from "../components/ui/Typography";
@@ -38,9 +39,9 @@ import Typography from "../components/ui/Typography";
 import { OCCUPANCY_TYPES, RISK_CLASSES } from "../constants/fireInsurance";
 import {
   calculatePremium,
+  calculateTSI,
   formatCurrency,
   getPremiumRate,
-  calculateTSI,
   PremisesEntry,
   PremiumResult,
 } from "../utils/fireCalculations";
@@ -60,12 +61,19 @@ function newPremises(): PremisesEntry {
     occupancyType: null,
     premiumRate: "",
     sumInsured: "",
-    isPercentage: true, // DEFAULT: Percentage mode (User request)
+    isPercentage: true,
   };
 }
 
+const getLabel = (
+  value: string | null,
+  options: { label: string; value: string }[],
+) => {
+  return options.find((o) => o.value === value)?.label || "Premises";
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
-// PremisesCard — Individual premises occupation block
+// PremisesCard
 // ─────────────────────────────────────────────────────────────────────────────
 interface PremisesCardProps {
   entry: PremisesEntry;
@@ -74,6 +82,11 @@ interface PremisesCardProps {
   tsi: number;
   onUpdate: (id: string, updates: Partial<PremisesEntry>) => void;
   onRemove: (id: string) => void;
+  // Focus refs
+  riskRef: React.RefObject<AppSelectRef>;
+  occRef: React.RefObject<AppSelectRef>;
+  rateRef: React.RefObject<TextInput>;
+  sumRef: React.RefObject<TextInput>;
 }
 
 function PremisesCard({
@@ -83,17 +96,42 @@ function PremisesCard({
   tsi,
   onUpdate,
   onRemove,
+  riskRef,
+  occRef,
+  rateRef,
+  sumRef,
 }: PremisesCardProps) {
+  const occupancyLabel = getLabel(entry.occupancyType, OCCUPANCY_TYPES as any);
+  const cardTitle = entry.occupancyType
+    ? `${occupancyLabel} ${index + 1}`
+    : `Premises ${index + 1}`;
+
   const handleRiskClassChange = (value: string) => {
     const riskClass = value as PremisesEntry["riskClass"];
     const rate = getPremiumRate(riskClass, entry.occupancyType);
-    onUpdate(entry.id, { riskClass, premiumRate: rate > 0 ? rate.toString() : "" });
+    onUpdate(entry.id, {
+      riskClass,
+      premiumRate: rate > 0 ? rate.toString() : "",
+    });
+    // Automatically open next select
+    setTimeout(() => occRef.current?.open(), 100);
   };
 
   const handleOccupancyChange = (value: string) => {
     const occupancyType = value as PremisesEntry["occupancyType"];
     const rate = getPremiumRate(entry.riskClass, occupancyType);
-    onUpdate(entry.id, { occupancyType, premiumRate: rate > 0 ? rate.toString() : "" });
+    onUpdate(entry.id, {
+      occupancyType,
+      premiumRate: rate > 0 ? rate.toString() : "",
+    });
+    // Focus manual rate if empty, else jump to sum insured
+    setTimeout(() => {
+      if (!rate) {
+        rateRef.current?.focus();
+      } else {
+        sumRef.current?.focus();
+      }
+    }, 100);
   };
 
   const toggleMode = () => {
@@ -102,17 +140,11 @@ function PremisesCard({
 
   return (
     <Animated.View entering={FadeInDown.duration(300).springify()}>
-      <SectionCard
-        title={`Premises ${index + 1}`}
-        accent
-        style={styles.premisesCard}
-      >
-        {/* Beautiful Remove button */}
+      <SectionCard title={cardTitle} accent style={styles.premisesCard}>
         {totalCount > 1 && (
           <Pressable
             style={styles.removeBtnContainer}
             onPress={() => onRemove(entry.id)}
-            accessibilityLabel={`Remove Premises ${index + 1}`}
           >
             <View style={styles.removeBtnCircle}>
               <Ionicons name="trash-outline" size={16} color="#EF4444" />
@@ -120,70 +152,90 @@ function PremisesCard({
           </Pressable>
         )}
 
-        {/* Risk Classification */}
         <AppSelect
+          ref={riskRef}
           label="Risk Classification"
-          options={RISK_CLASSES as unknown as { label: string; value: string }[]}
+          options={RISK_CLASSES as any}
           value={entry.riskClass}
           onChange={handleRiskClassChange}
           placeholder="Select risk class"
         />
 
-        {/* Occupancy Type */}
         <AppSelect
+          ref={occRef}
           label="Occupancy Type"
-          options={OCCUPANCY_TYPES as unknown as { label: string; value: string }[]}
+          options={OCCUPANCY_TYPES as any}
           value={entry.occupancyType}
           onChange={handleOccupancyChange}
           placeholder="Select occupancy type"
         />
 
-        {/* Premium Rate — Editable */}
         <AppInput
+          ref={rateRef}
           label="Premium Rate"
           value={entry.premiumRate}
           onChangeText={(v) => onUpdate(entry.id, { premiumRate: v })}
           suffix="%"
           placeholder="0.00"
-          hint="Edit manually or select class/occupancy above"
+          hint="Edit manually if needed"
+          returnKeyType="next"
+          onSubmitEditing={() => sumRef.current?.focus()}
         />
 
-        {/* Sum Insured Mode Toggle */}
         <View style={styles.modeToggleRow}>
           <Typography variant="label">Calculate By:</Typography>
           <View style={styles.modeToggle}>
-            <Pressable 
+            <Pressable
               onPress={toggleMode}
-              style={[styles.modeBtn, entry.isPercentage && styles.modeBtnActive]}
+              style={[
+                styles.modeBtn,
+                entry.isPercentage && styles.modeBtnActive,
+              ]}
             >
-              <Typography variant="caption" style={entry.isPercentage ? styles.modeTextActive : styles.modeText}>
-                Percentage (%)
+              <Typography
+                variant="caption"
+                style={
+                  entry.isPercentage ? styles.modeTextActive : styles.modeText
+                }
+              >
+                %
               </Typography>
             </Pressable>
-            <Pressable 
+            <Pressable
               onPress={toggleMode}
-              style={[styles.modeBtn, !entry.isPercentage && styles.modeBtnActive]}
+              style={[
+                styles.modeBtn,
+                !entry.isPercentage && styles.modeBtnActive,
+              ]}
             >
-              <Typography variant="caption" style={!entry.isPercentage ? styles.modeTextActive : styles.modeText}>
-                Amount (BDT)
+              <Typography
+                variant="caption"
+                style={
+                  !entry.isPercentage ? styles.modeTextActive : styles.modeText
+                }
+              >
+                Amount
               </Typography>
             </Pressable>
           </View>
         </View>
 
-        {/* Sum Insured */}
         <AppInput
-          label={entry.isPercentage ? "Sum Insured Percentage" : "Sum Insured Amount"}
+          ref={sumRef}
+          label={
+            entry.isPercentage ? "Sum Insured Percentage" : "Sum Insured Amount"
+          }
           value={entry.sumInsured}
           onChangeText={(text) => onUpdate(entry.id, { sumInsured: text })}
           prefix={entry.isPercentage ? undefined : "BDT"}
           suffix={entry.isPercentage ? "%" : undefined}
           placeholder={entry.isPercentage ? "100" : "0.00"}
           hint={
-            entry.isPercentage 
-              ? `Based on Total Sum Insured (BDT ${formatCurrency(tsi)})`
-              : `Portion of Total Sum Insured (BDT ${formatCurrency(tsi)})`
+            entry.isPercentage
+              ? `Of Total Sum Insured (BDT ${formatCurrency(tsi)})`
+              : "Direct allocation"
           }
+          returnKeyType="done"
         />
       </SectionCard>
     </Animated.View>
@@ -191,53 +243,86 @@ function PremisesCard({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ResultCard — Displays results (no shortcuts)
+// ResultCard
 // ─────────────────────────────────────────────────────────────────────────────
-function ResultCard({ result }: { result: PremiumResult }) {
+function ResultCard({
+  result,
+  premises,
+}: {
+  result: PremiumResult;
+  premises: PremisesEntry[];
+}) {
+  const roundedTotal = Math.round(result.totalPremium);
+
   return (
     <Animated.View entering={SlideInDown.duration(400).springify()}>
       <SectionCard
         title="Calculation Result"
-        subtitle="Verified against commercial insurance standards"
+        subtitle="Rounded to nearest BDT"
         style={styles.resultCard}
       >
         <View style={styles.resultIcon}>
-          <Ionicons name="shield-checkmark" size={28} color="#F97316" />
+          <Ionicons name="receipt-outline" size={28} color="#F97316" />
         </View>
 
-        <ResultRow label="Total Sum Insured" value={`BDT ${formatCurrency(result.totalSumInsured)}`} />
-        
-        {/* Detailed breakdown per premises */}
+        <ResultRow
+          label="Total Sum Insured"
+          value={`BDT ${formatCurrency(result.totalSumInsured)}`}
+        />
+
         <View style={styles.breakdownHeader}>
-          <Typography variant="caption" style={styles.breakdownLabel}>Breakdown per Premises</Typography>
+          <Typography variant="caption" style={styles.breakdownLabel}>
+            Premium Breakdown
+          </Typography>
         </View>
-        
-        {result.premisesResults.map((pr, idx) => (
-          <View key={pr.id} style={styles.premisesResultRow}>
-            <View style={styles.premisesResultInfo}>
-              <Typography variant="caption" color="#9CA3AF">Premises {idx + 1} ({pr.rate}%)</Typography>
-              <Typography variant="caption" color="#4B5563">Value: BDT {formatCurrency(pr.sumInsured)}</Typography>
+
+        {result.premisesResults.map((pr, idx) => {
+          const occLabel = getLabel(
+            premises[idx]?.occupancyType,
+            OCCUPANCY_TYPES as any,
+          );
+          const label = premises[idx]?.occupancyType
+            ? `${occLabel} ${idx + 1}`
+            : `Premises ${idx + 1}`;
+
+          return (
+            <View key={pr.id} style={styles.premisesResultRow}>
+              <View style={styles.premisesResultInfo}>
+                <Typography variant="caption" color="#9CA3AF">
+                  {label} ({pr.rate}%)
+                </Typography>
+                <Typography variant="caption" color="#4B5563">
+                  Value: BDT {formatCurrency(pr.sumInsured)}
+                </Typography>
+              </View>
+              <Typography variant="body" style={styles.premisesResultValue}>
+                BDT {formatCurrency(pr.netPremium)}
+              </Typography>
             </View>
-            <Typography variant="body" style={styles.premisesResultValue}>
-              BDT {formatCurrency(pr.netPremium)}
-            </Typography>
-          </View>
-        ))}
+          );
+        })}
 
         <View style={styles.divider} />
-
-        <ResultRow label="Total Net Premium" value={`BDT ${formatCurrency(result.totalNetPremium)}`} />
-        <ResultRow label="VAT (15%)" value={`BDT ${formatCurrency(result.vatAmount)}`} />
-
+        <ResultRow
+          label="Net Premium"
+          value={`BDT ${formatCurrency(result.totalNetPremium)}`}
+        />
+        <ResultRow
+          label="VAT (15%)"
+          value={`BDT ${formatCurrency(result.vatAmount)}`}
+        />
         <View style={styles.divider} />
 
         <View style={styles.netPremiumRow}>
           <Typography variant="subheading" style={styles.netLabel}>
-            Total Premium Payable
+            Total Amount
           </Typography>
           <Animated.View entering={ZoomIn.duration(400).delay(200)}>
-            <Typography variant="mono">
-              BDT {formatCurrency(result.totalPremium)}
+            <Typography
+              variant="mono"
+              style={{ fontSize: 24, color: "#F97316" }}
+            >
+              BDT {roundedTotal.toLocaleString("en-BD")}
             </Typography>
           </Animated.View>
         </View>
@@ -249,28 +334,46 @@ function ResultCard({ result }: { result: PremiumResult }) {
 function ResultRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.resultRow}>
-      <Typography variant="body" style={styles.resultLabel}>{label}</Typography>
-      <Typography variant="body" style={styles.resultValue}>{value}</Typography>
+      <Typography variant="body" style={styles.resultLabel}>
+        {label}
+      </Typography>
+      <Typography variant="body" style={styles.resultValue}>
+        {value}
+      </Typography>
     </View>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FireScreen — Main screen component
+// FireScreen
 // ─────────────────────────────────────────────────────────────────────────────
 export default function FireScreen() {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
 
-  // Form state
+  // Refs for focus flow
+  const limitRef = useRef<TextInput>(null);
+  const toleranceRef = useRef<TextInput>(null);
+  // Using an object to store refs for premises items dynamically
+  const premisesRefs = useRef<
+    Record<
+      string,
+      {
+        risk: React.RefObject<AppSelectRef>;
+        occ: React.RefObject<AppSelectRef>;
+        rate: React.RefObject<TextInput>;
+        sum: React.RefObject<TextInput>;
+      }
+    >
+  >({});
+
   const [limitAmount, setLimitAmount] = useState("");
-  const [bankTolerance, setBankTolerance] = useState("10"); // Default 10%
+  const [bankTolerance, setBankTolerance] = useState("10");
   const [premises, setPremises] = useState<PremisesEntry[]>([newPremises()]);
   const [rsdEnabled, setRsdEnabled] = useState(false);
   const [result, setResult] = useState<PremiumResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Computed Total Sum Insured
   const limitNum = parseFloat(limitAmount) || 0;
   const toleranceNum = parseFloat(bankTolerance) || 0;
   const tsi = calculateTSI(limitNum, toleranceNum);
@@ -278,20 +381,24 @@ export default function FireScreen() {
   const handleUpdatePremises = useCallback(
     (id: string, updates: Partial<PremisesEntry>) => {
       setPremises((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+        prev.map((p) => (p.id === id ? { ...p, ...updates } : p)),
       );
     },
-    []
+    [],
   );
 
   const handleRemovePremises = useCallback((id: string) => {
     setPremises((prev) => prev.filter((p) => p.id !== id));
+    delete premisesRefs.current[id];
     setResult(null);
   }, []);
 
   const handleAddPremises = () => {
-    setPremises((prev) => [...prev, newPremises()]);
+    const p = newPremises();
+    setPremises((prev) => [...prev, p]);
     setResult(null);
+    // Focus first field of new premises
+    setTimeout(() => premisesRefs.current[p.id]?.risk.current?.open(), 300);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
@@ -307,36 +414,37 @@ export default function FireScreen() {
   const handleCalculate = () => {
     const limitVal = parseFloat(limitAmount) || 0;
     if (limitVal < 100000) {
-      Alert.alert("Validation Error", "Limit Amount must be at least 1,0,0,000 BDT (1 Lac).");
+      Alert.alert("Validation Error", "Limit Amount at least 1,00,000 BDT.");
       return;
     }
-
-    const incomplete = premises.some(p => !p.premiumRate || !p.sumInsured);
+    const incomplete = premises.some((p) => !p.premiumRate || !p.sumInsured);
     if (incomplete) {
-      Alert.alert("Validation Error", "Please provide Premium Rate and Sum Insured for all premises.");
+      Alert.alert("Validation Error", "Please fill all premises fields.");
       return;
     }
 
-    // Validation for Sum Insured totals vs Total Sum Insured
-    let totalSumInsured = 0;
-    premises.forEach(p => {
+    let totalSI = 0;
+    premises.forEach((p) => {
       const siVal = parseFloat(p.sumInsured) || 0;
-      totalSumInsured += p.isPercentage ? (tsi * (siVal / 100)) : siVal;
+      totalSI += p.isPercentage ? tsi * (siVal / 100) : siVal;
     });
 
-    // Check if it matches TSI
-    const diff = Math.abs(totalSumInsured - tsi);
-    if (diff > 1) {
+    if (Math.abs(totalSI - tsi) > 1) {
       Alert.alert(
-        "Validation Error", 
-        `The total of all premises (BDT ${formatCurrency(totalSumInsured)}) must equal the Total Sum Insured (BDT ${formatCurrency(tsi)}).\n\nPlease adjust the percentages or amounts.`
+        "Validation Error",
+        `Total (${formatCurrency(totalSI)}) must equal Total Sum Insured (${formatCurrency(tsi)}).`,
       );
       return;
     }
 
     setIsCalculating(true);
     setTimeout(() => {
-      const res = calculatePremium(premises, limitNum, toleranceNum, rsdEnabled);
+      const res = calculatePremium(
+        premises,
+        limitNum,
+        toleranceNum,
+        rsdEnabled,
+      );
       setResult(res);
       setIsCalculating(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
@@ -344,13 +452,12 @@ export default function FireScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
       behavior={Platform.OS === "android" ? "height" : "padding"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <View style={[styles.screen, { paddingTop: insets.top }]}>
-        {/* Header */}
         <Animated.View entering={FadeInUp.duration(400)} style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
@@ -359,7 +466,7 @@ export default function FireScreen() {
               </View>
               <View>
                 <Typography variant="caption" style={styles.headerSubtitle}>
-                  INSURP PREMIUM CALCULATOR
+                  PREMIUM CALCULATOR
                 </Typography>
                 <Typography variant="heading" style={styles.headerTitle}>
                   Fire Insurance
@@ -375,7 +482,7 @@ export default function FireScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: insets.bottom + 40 },
+            { paddingBottom: insets.bottom + 60 },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -383,77 +490,109 @@ export default function FireScreen() {
           <Animated.View entering={FadeInDown.duration(350).delay(100)}>
             <SectionCard title="Basic Information" accent>
               <AppInput
+                ref={limitRef}
                 label="Limit Amount"
                 value={limitAmount}
-                onChangeText={(v) => { setLimitAmount(v); setResult(null); }}
+                onChangeText={(v) => {
+                  setLimitAmount(v);
+                  setResult(null);
+                }}
                 prefix="BDT"
                 placeholder="500,000"
-                hint="Minimum 1,00,000 BDT"
+                hint="Min 1,00,000 BDT"
+                returnKeyType="next"
+                onSubmitEditing={() => toleranceRef.current?.focus()}
               />
               <AppInput
+                ref={toleranceRef}
                 label="Bank Tolerance"
                 value={bankTolerance}
-                onChangeText={(v) => { setBankTolerance(v); setResult(null); }}
+                onChangeText={(v) => {
+                  setBankTolerance(v);
+                  setResult(null);
+                }}
                 suffix="%"
                 placeholder="10"
-                hint={limitNum > 0 ? `Total Sum Insured: BDT ${formatCurrency(tsi)}` : "Percentage added to limit"}
+                hint={
+                  limitNum > 0
+                    ? `Total Sum Insured: BDT ${formatCurrency(tsi)}`
+                    : "Added to limit"
+                }
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  const firstP = premises[0];
+                  if (firstP)
+                    premisesRefs.current[firstP.id]?.risk.current?.open();
+                }}
               />
             </SectionCard>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.duration(350).delay(180)}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <View style={styles.sectionDot} />
-                <Typography variant="subheading">Premises Occupations</Typography>
-              </View>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <View style={styles.sectionDot} />
+              <Typography variant="subheading">Premises Occupations</Typography>
             </View>
-          </Animated.View>
+          </View>
 
-          {premises.map((entry, index) => (
-            <PremisesCard
-              key={entry.id}
-              entry={entry}
-              index={index}
-              totalCount={premises.length}
-              tsi={tsi}
-              onUpdate={handleUpdatePremises}
-              onRemove={handleRemovePremises}
-            />
-          ))}
+          {premises.map((entry, index) => {
+            // Initialize refs for this entry if not exists
+            if (!premisesRefs.current[entry.id]) {
+              premisesRefs.current[entry.id] = {
+                risk: React.createRef<AppSelectRef>(),
+                occ: React.createRef<AppSelectRef>(),
+                rate: React.createRef<TextInput>(),
+                sum: React.createRef<TextInput>(),
+              };
+            }
+            const refs = premisesRefs.current[entry.id]!;
 
-          <Animated.View entering={FadeInDown.duration(300).delay(250)}>
-            <AppButton
-              title="+ Add Another Premises"
-              onPress={handleAddPremises}
-              variant="secondary"
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(350).delay(300)}>
-            <SectionCard style={styles.rsdCard}>
-              <AppSlider
-                value={rsdEnabled}
-                onChange={(v) => { setRsdEnabled(v); setResult(null); }}
-                label="Riots, Strikes & Damage"
-                description="Coverage at 0.13% rate"
+            return (
+              <PremisesCard
+                key={entry.id}
+                entry={entry}
+                index={index}
+                totalCount={premises.length}
+                tsi={tsi}
+                onUpdate={handleUpdatePremises}
+                onRemove={handleRemovePremises}
+                riskRef={refs.risk}
+                occRef={refs.occ}
+                rateRef={refs.rate}
+                sumRef={refs.sum}
               />
-            </SectionCard>
-          </Animated.View>
+            );
+          })}
+
+          <AppButton
+            title="+ Add Another Premises"
+            onPress={handleAddPremises}
+            variant="secondary"
+          />
+
+          <SectionCard style={styles.rsdCard}>
+            <AppSlider
+              value={rsdEnabled}
+              onChange={(v) => {
+                setRsdEnabled(v);
+                setResult(null);
+              }}
+              label="Riots, Strikes & Damage"
+              description="Coverage at 0.13% rate"
+            />
+          </SectionCard>
 
           <View style={styles.actionButtons}>
-            <View style={{ flex: 1 }}>
+            <AppButton
+              title="Calculate Premium"
+              onPress={handleCalculate}
+              variant="primary"
+              loading={isCalculating}
+              icon={<Ionicons name="calculator" size={18} color="#fff" />}
+            />
+            <View style={styles.resetButtonWrap}>
               <AppButton
-                title="Calculate"
-                onPress={handleCalculate}
-                variant="primary"
-                loading={isCalculating}
-                icon={<Ionicons name="calculator" size={18} color="#fff" />}
-              />
-            </View>
-            <View style={{ width: 100 }}>
-              <AppButton
-                title="Reset"
+                title="Reset Form"
                 onPress={handleReset}
                 variant="ghost"
                 disabled={isCalculating}
@@ -461,7 +600,7 @@ export default function FireScreen() {
             </View>
           </View>
 
-          {result && <ResultCard result={result} />}
+          {result && <ResultCard result={result} premises={premises} />}
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
@@ -470,41 +609,140 @@ export default function FireScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#0D1117" },
-  header: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: "#0D1117" },
-  headerContent: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 14 },
+  header: { paddingHorizontal: 20, paddingTop: 12 },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 14,
+  },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  fireIconBadge: { width: 42, height: 42, borderRadius: 12, backgroundColor: "rgba(249,115,22,0.15)", borderWidth: 1, borderColor: "rgba(249,115,22,0.3)", alignItems: "center", justifyContent: "center" },
-  headerSubtitle: { color: "#F97316", letterSpacing: 1.2, fontSize: 10, marginBottom: 2 },
+  fireIconBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "rgba(249,115,22,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(249,115,22,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSubtitle: {
+    color: "#F97316",
+    letterSpacing: 1.2,
+    fontSize: 10,
+    marginBottom: 2,
+  },
   headerTitle: { fontSize: 22 },
-  headerBorder: { height: 1, backgroundColor: "#1F2937", marginHorizontal: -20 },
+  headerBorder: {
+    height: 1,
+    backgroundColor: "#1F2937",
+    marginHorizontal: -20,
+  },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, gap: 12 },
-  sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: -4, marginTop: 4 },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: -4,
+    marginTop: 4,
+  },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  sectionDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#F97316" },
+  sectionDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#F97316",
+  },
   premisesCard: { position: "relative" },
   removeBtnContainer: { position: "absolute", top: 12, right: 12, zIndex: 10 },
-  removeBtnCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(239, 68, 68, 0.1)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(239, 68, 68, 0.2)" },
-  modeToggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 14, paddingVertical: 8, borderTopWidth: 1, borderTopColor: "#1F2937" },
-  modeToggle: { flexDirection: "row", backgroundColor: "#0F172A", borderRadius: 8, overflow: "hidden", borderWidth: 1, borderColor: "#2D3748", padding: 2 },
-  modeBtn: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6 },
+  removeBtnCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(239,68,68,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.2)",
+  },
+  modeToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 14,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#1F2937",
+  },
+  modeToggle: {
+    flexDirection: "row",
+    backgroundColor: "#0F172A",
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#2D3748",
+    padding: 2,
+  },
+  modeBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
   modeBtnActive: { backgroundColor: "#F97316" },
   modeText: { color: "#9CA3AF" },
   modeTextActive: { color: "#fff", fontFamily: "Inter_600SemiBold" },
   rsdCard: { marginTop: 4 },
-  actionButtons: { flexDirection: "row", gap: 12, marginTop: 8, marginBottom: 8, alignItems: "center" },
-  resultCard: { borderColor: "rgba(249,115,22,0.3)", backgroundColor: "#1A1F2E", marginTop: 12 },
-  resultIcon: { alignSelf: "center", marginBottom: 16, width: 56, height: 56, borderRadius: 28, backgroundColor: "rgba(249,115,22,0.12)", borderWidth: 1, borderColor: "rgba(249,115,22,0.3)", alignItems: "center", justifyContent: "center" },
-  resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8 },
+  actionButtons: { gap: 12, marginTop: 8 },
+  resetButtonWrap: { marginTop: 4 },
+  resultCard: {
+    borderColor: "rgba(249,115,22,0.3)",
+    backgroundColor: "#1A1F2E",
+    marginTop: 12,
+  },
+  resultIcon: {
+    alignSelf: "center",
+    marginBottom: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(249,115,22,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(249,115,22,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resultRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
   resultLabel: { color: "#9CA3AF", flex: 1 },
   resultValue: { color: "#E5E7EB", fontFamily: "Inter_500Medium" },
   breakdownHeader: { marginTop: 12, marginBottom: 6 },
-  breakdownLabel: { color: "#F97316", textTransform: "uppercase", letterSpacing: 1, fontSize: 11 },
-  premisesResultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, paddingHorizontal: 10, backgroundColor: "rgba(15, 23, 42, 0.6)", borderRadius: 10, marginBottom: 6, borderWidth: 1, borderColor: "#1F2937" },
+  breakdownLabel: {
+    color: "#F97316",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontSize: 11,
+  },
+  premisesResultRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "rgba(15,23,42,0.6)",
+    borderRadius: 10,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: "#1F2937",
+  },
   premisesResultInfo: { flex: 1 },
   premisesResultValue: { color: "#F9FAFB", fontFamily: "Inter_600SemiBold" },
   divider: { height: 1, backgroundColor: "#2D3748", marginVertical: 10 },
-  netPremiumRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4 },
+  netPremiumRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
   netLabel: { color: "#F9FAFB" },
-  disclaimer: { marginTop: 14, textAlign: "center", color: "#4B5563", lineHeight: 18 },
 });
