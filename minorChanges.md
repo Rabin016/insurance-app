@@ -1,4 +1,4 @@
-- Reset Button should be under calculate button. not in side by side
-- After typing limit and when i hit entre it should automatically go to next input field. (like. Limit > Risk classification > occupancy type > sum insured > rsd > calculate)
-- Instade of showing premises 1 premises 2 it should show my selected occupancy type. like if i select shop then it should show shop 1 shop 2 and so on. Same in the result section too.
-- When i switch between pages there is a white flash. fix it.
+## Marine Page
+
+- Remove currency input field. and adjust Limit amount.
+-

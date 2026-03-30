@@ -1,11 +1,6 @@
-import PlaceholderPage from "../../components/ui/PlaceholderPage";
+import React from 'react';
+import MarineScreen from '../../screens/MarineScreen';
 
-export default function MarineTab() {
-  return (
-    <PlaceholderPage
-      icon="boat-outline"
-      title="Marine Insurance"
-      message="I will instruct you later."
-    />
-  );
+export default function MarineLayout() {
+  return <MarineScreen />;
 }
