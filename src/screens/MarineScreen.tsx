@@ -307,11 +307,9 @@ function ResultRow({ label, value, isTsi = false }: { label: string; value: stri
 }
 
 function MarineResultCard({ result, currencySymbol, currencyCode }: { result: MarineResult; currencySymbol: string; currencyCode: string }) {
-  const roundedTotal = Math.round(result.totalPremium);
-  
   return (
     <Animated.View entering={SlideInDown.duration(400).springify()}>
-      <SectionCard title="Marine Result" subtitle="Converted to BDT with details" style={styles.resultCard}>
+      <SectionCard title="Marine Result" subtitle="Cover Note Breakdown" style={styles.resultCard}>
         <View style={styles.resultIcon}>
           <Ionicons name="receipt-outline" size={28} color="#F97316" />
         </View>
@@ -328,16 +326,28 @@ function MarineResultCard({ result, currencySymbol, currencyCode }: { result: Ma
         
         <View style={styles.divider} />
         
+        <ResultRow 
+          label={`Marine @ ${result.marineRate.toFixed(2)}%`} 
+          value={`BDT ${formatCurrencyMarine(result.marinePremium)}`} 
+        />
+        {result.warSurcharge > 0 && (
+          <ResultRow 
+            label={`WAR & SRCC @ ${result.warRate.toFixed(4)}%`} 
+            value={`BDT ${formatCurrencyMarine(result.warSurcharge)}`} 
+          />
+        )}
+        
         <ResultRow label="Net Premium" value={`BDT ${formatCurrencyMarine(result.netPremium)}`} />
-        <ResultRow label="VAT (15%)" value={`BDT ${formatCurrencyMarine(result.vatAmount)}`} />
+        <ResultRow label="VAT @ 15%" value={`BDT ${formatCurrencyMarine(result.vatAmount)}`} />
+        <ResultRow label="Stamp Duty" value={`BDT ${formatCurrencyMarine(result.stampDuty)}`} />
         
         <View style={styles.divider} />
         
         <View style={styles.totalRow}>
-          <Typography variant="subheading" style={styles.totalLabel}>Total Amount</Typography>
+          <Typography variant="subheading" style={styles.totalLabel}>Total Premium</Typography>
           <Animated.View entering={ZoomIn.duration(400).delay(200)}>
             <Typography variant="mono" style={styles.totalValue}>
-              BDT {roundedTotal.toLocaleString("en-BD")}
+              BDT {formatCurrencyMarine(result.totalPremium)}
             </Typography>
           </Animated.View>
         </View>
