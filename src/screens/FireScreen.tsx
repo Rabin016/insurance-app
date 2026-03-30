@@ -79,9 +79,9 @@ interface PremisesCardProps {
   tsi: number;
   onUpdate: (id: string, updates: Partial<PremisesEntry>) => void;
   onRemove: (id: string) => void;
-  occRef: React.RefObject<AppSelectRef>;
-  rateRef: React.RefObject<TextInput>;
-  sumRef: React.RefObject<TextInput>;
+  occRef: React.RefObject<AppSelectRef | null>;
+  rateRef: React.RefObject<TextInput | null>;
+  sumRef: React.RefObject<TextInput | null>;
 }
 
 function PremisesCard({
@@ -193,14 +193,15 @@ export default function FireScreen() {
   const limitRef = useRef<TextInput>(null);
   const toleranceRef = useRef<TextInput>(null);
   const premisesRefs = useRef<Record<string, {
-    occ: React.RefObject<AppSelectRef>;
-    rate: React.RefObject<TextInput>;
-    sum: React.RefObject<TextInput>;
+    occ: React.RefObject<AppSelectRef | null>;
+    rate: React.RefObject<TextInput | null>;
+    sum: React.RefObject<TextInput | null>;
   }>>({});
 
   const [limitAmount, setLimitAmount] = useState("");
   const [bankTolerance, setBankTolerance] = useState("10");
-  const [premises, setPremises] = useState<PremisesEntry[]>([newPremises()]);
+  const [discount, setDiscount] = useState("");
+  const [premises, setPremises] = useState([newPremises()]);
   const [rsdEnabled, setRsdEnabled] = useState(false);
   const [result, setResult] = useState<PremiumResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -229,6 +230,7 @@ export default function FireScreen() {
   const handleReset = () => {
     setLimitAmount("");
     setBankTolerance("10");
+    setDiscount("");
     setPremises([newPremises()]);
     setRsdEnabled(false);
     setResult(null);
@@ -257,7 +259,8 @@ export default function FireScreen() {
     }
     setIsCalculating(true);
     setTimeout(() => {
-      const res = calculatePremium(premises, limitNum, toleranceNum, rsdEnabled);
+      const discountVal = parseFloat(discount) || 0;
+      const res = calculatePremium(premises, limitNum, toleranceNum, rsdEnabled, discountVal);
       setResult(res);
       setIsCalculating(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
@@ -306,7 +309,7 @@ export default function FireScreen() {
 
           {premises.map((entry, index) => {
             if (!premisesRefs.current[entry.id]) {
-              premisesRefs.current[entry.id] = { occ: React.createRef<AppSelectRef>(), rate: React.createRef<TextInput>(), sum: React.createRef<TextInput>() };
+              premisesRefs.current[entry.id] = { occ: React.createRef<AppSelectRef | null>(), rate: React.createRef<TextInput | null>(), sum: React.createRef<TextInput | null>() };
             }
             const refs = premisesRefs.current[entry.id]!;
             return (
@@ -330,6 +333,21 @@ export default function FireScreen() {
               showProtectionIcon={true}
             />
           </SectionCard>
+
+          <Animated.View entering={FadeInDown.duration(350).delay(350)}>
+            <SectionCard title="Offers & Discounts">
+              <AppInput
+                label="Discount (%)"
+                labelIcon="gift-outline"
+                value={discount}
+                onChangeText={(v) => { setDiscount(v); setResult(null); }}
+                suffix="%"
+                placeholder="0"
+                hint="Percentage discount on total Net Premium"
+                returnKeyType="done"
+              />
+            </SectionCard>
+          </Animated.View>
 
           <View style={styles.actionButtons}>
             <AppButton title="Calculate Premium" onPress={handleCalculate} variant="primary" loading={isCalculating} icon={<Ionicons name="calculator" size={18} color="#fff" />} />
@@ -358,8 +376,6 @@ function ResultRow({ label, value }: { label: string; value: string }) {
 }
 
 function ResultCard({ result, premises }: { result: PremiumResult; premises: PremisesEntry[] }) {
-  const roundedTotal = Math.round(result.totalPremium);
-  
   return (
     <Animated.View entering={SlideInDown.duration(400).springify()}>
       <SectionCard title="Calculation Result" subtitle="Rounded to nearest BDT" style={styles.resultCard}>
@@ -386,15 +402,28 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
         })}
         <View style={styles.divider} />
         
-        {/* Corrected Template Literal Syntax */}
         <ResultRow label="Net Premium" value={`BDT ${formatCurrency(result.totalNetPremium)}`} />
+        
+        {result.discountAmount > 0 && (
+          <>
+            <ResultRow 
+              label="Discount Amount" 
+              value={`- BDT ${formatCurrency(result.discountAmount)}`} 
+            />
+            <ResultRow 
+              label="Deducted Net Premium" 
+              value={`BDT ${formatCurrency(result.discountedNetPremium)}`} 
+            />
+          </>
+        )}
+
         <ResultRow label="VAT (15%)" value={`BDT ${formatCurrency(result.vatAmount)}`} />
         
         <View style={styles.divider} />
         <View style={styles.netPremiumRow}>
           <Typography variant="subheading" style={styles.netLabel}>Total Amount</Typography>
           <Animated.View entering={ZoomIn.duration(400).delay(200)}>
-            <Typography variant="mono" style={{ fontSize: 24, color: "#F97316" }}>BDT {roundedTotal.toLocaleString("en-BD")}</Typography>
+            <Typography variant="mono" style={{ fontSize: 24, color: "#F97316" }}>BDT {formatCurrency(result.totalPremium)}</Typography>
           </Animated.View>
         </View>
       </SectionCard>

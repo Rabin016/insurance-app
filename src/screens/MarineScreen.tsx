@@ -60,9 +60,9 @@ export default function MarineScreen() {
 
   // State
   const [limitAmount, setLimitAmount] = useState("");
-  const [currency, setCurrency] = useState<string>("USD");
   const [bankTolerance, setBankTolerance] = useState("10");
   const [currencyRate, setCurrencyRate] = useState("120.00");
+  const [discount, setDiscount] = useState("");
   
   const [transportMode, setTransportMode] = useState<TransportMode>("SEA");
   const [condition, setCondition] = useState<string | null>(null);
@@ -113,7 +113,8 @@ export default function MarineScreen() {
 
     setIsCalculating(true);
     setTimeout(() => {
-      const res = calculateMarinePremium(limit, tol, rate, pRate, warEnabled);
+      const discountVal = parseFloat(discount) || 0;
+      const res = calculateMarinePremium(limit, tol, rate, pRate, warEnabled, transportMode, discountVal);
       setResult(res);
       setIsCalculating(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
@@ -122,9 +123,9 @@ export default function MarineScreen() {
 
   const handleReset = () => {
     setLimitAmount("");
-    setCurrency("USD");
     setBankTolerance("10");
     setCurrencyRate("120.00");
+    setDiscount("");
     setTransportMode("SEA");
     setCondition(null);
     setPremiumRate("");
@@ -170,30 +171,17 @@ export default function MarineScreen() {
           {/* Basic Information */}
           <Animated.View entering={FadeInDown.duration(350).delay(100)}>
             <SectionCard title="Value & Currency" accent>
-              <View style={styles.currencyRow}>
-                <View style={styles.currencyInputWrap}>
-                   <AppInput
-                    ref={limitRef}
-                    label="Limit Amount"
-                    labelIcon="cash-outline"
-                    value={limitAmount}
-                    onChangeText={(v) => { setLimitAmount(v); setResult(null); }}
-                    prefix={currency === "USD" ? "$" : currency === "GBP" ? "£" : "€"}
-                    placeholder="10,000"
-                    returnKeyType="next"
-                    onSubmitEditing={() => rateRef.current?.focus()}
-                  />
-                </View>
-                <View style={styles.currencySelectWrap}>
-                  <AppSelect
-                    label="Currency"
-                    value={currency}
-                    onChange={(v) => { setCurrency(v); setResult(null); }}
-                    options={CURRENCY_OPTIONS as any}
-                    placeholder="USD"
-                  />
-                </View>
-              </View>
+              <AppInput
+                ref={limitRef}
+                label="Limit Amount"
+                labelIcon="cash-outline"
+                value={limitAmount}
+                onChangeText={(v) => { setLimitAmount(v); setResult(null); }}
+                prefix="$"
+                placeholder="10,000"
+                returnKeyType="next"
+                onSubmitEditing={() => rateRef.current?.focus()}
+              />
 
               <AppInput
                 ref={rateRef}
@@ -266,6 +254,21 @@ export default function MarineScreen() {
               </SectionCard>
           </Animated.View>
 
+          <Animated.View entering={FadeInDown.duration(350).delay(350)}>
+            <SectionCard title="Offers & Discounts">
+              <AppInput
+                label="Discount (%)"
+                labelIcon="gift-outline"
+                value={discount}
+                onChangeText={(v) => { setDiscount(v); setResult(null); }}
+                suffix="%"
+                placeholder="0"
+                hint="Percentage discount on Net Premium"
+                returnKeyType="done"
+              />
+            </SectionCard>
+          </Animated.View>
+
           {/* Buttons */}
           <View style={styles.actionButtons}>
             <AppButton
@@ -286,7 +289,7 @@ export default function MarineScreen() {
           </View>
 
           {/* Results */}
-          {result && <MarineResultCard result={result} currencySymbol={currency === "USD" ? "$" : currency === "GBP" ? "£" : "€"} currencyCode={currency} />}
+          {result && <MarineResultCard result={result} />}
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
@@ -306,7 +309,8 @@ function ResultRow({ label, value, isTsi = false }: { label: string; value: stri
   );
 }
 
-function MarineResultCard({ result, currencySymbol, currencyCode }: { result: MarineResult; currencySymbol: string; currencyCode: string }) {
+function MarineResultCard({ result }: { result: MarineResult }) {
+  const currencySymbol = "$"; // Fixed as requested by removing picker
   return (
     <Animated.View entering={SlideInDown.duration(400).springify()}>
       <SectionCard title="Marine Result" subtitle="Cover Note Breakdown" style={styles.resultCard}>
@@ -315,7 +319,7 @@ function MarineResultCard({ result, currencySymbol, currencyCode }: { result: Ma
         </View>
 
         <ResultRow 
-          label={`TSI in ${currencyCode}`} 
+          label={`TSI in USD`} 
           value={`${currencySymbol} ${formatCurrencyMarine(result.tsiInForeign)}`} 
           isTsi 
         />
@@ -337,7 +341,22 @@ function MarineResultCard({ result, currencySymbol, currencyCode }: { result: Ma
           />
         )}
         
+        <View style={styles.divider} />
         <ResultRow label="Net Premium" value={`BDT ${formatCurrencyMarine(result.netPremium)}`} />
+        
+        {result.discountPercent > 0 && (
+          <>
+            <ResultRow 
+              label={`Discount (${result.discountPercent}%)`} 
+              value={`- BDT ${formatCurrencyMarine(result.discountAmount)}`} 
+            />
+            <ResultRow 
+              label="Deducted Net Premium" 
+              value={`BDT ${formatCurrencyMarine(result.discountedNetPremium)}`} 
+            />
+          </>
+        )}
+
         <ResultRow label="VAT @ 15%" value={`BDT ${formatCurrencyMarine(result.vatAmount)}`} />
         <ResultRow label="Stamp Duty" value={`BDT ${formatCurrencyMarine(result.stampDuty)}`} />
         

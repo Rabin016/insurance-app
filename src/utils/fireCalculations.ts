@@ -23,12 +23,14 @@ export interface PremisesEntry {
 }
 
 export interface PremiumResult {
-  basePremium: number;        // Sum of (sumInsured * (rate / 100))
-  rsdSurcharge: number;       // Surcharge (sumInsured * (0.13 / 100))
-  totalNetPremium: number;    // basePremium + rsdSurcharge
-  totalSumInsured: number;    // TSI = Limit + Tolerance
-  vatAmount: number;          // 15% of totalNetPremium
-  totalPremium: number;       // totalNetPremium + vatAmount
+  basePremium: number;           // Sum of (sumInsured * (rate / 100))
+  rsdSurcharge: number;          // Surcharge (sumInsured * (0.13 / 100))
+  totalNetPremium: number;       // basePremium + rsdSurcharge (VAT base)
+  discountAmount: number;        // Calculated on totalNetPremium
+  discountedNetPremium: number;  // Net Premium after discount
+  totalSumInsured: number;       // TSI = Limit + Tolerance
+  vatAmount: number;             // 15% of original totalNetPremium
+  totalPremium: number;          // discountedNetPremium + vatAmount
   premisesResults: { id: string; netPremium: number; sumInsured: number; rate: number }[];
 }
 
@@ -46,7 +48,6 @@ export function getPremiumRate(
 // ─────────────────────────────────────────────────────────────────────────────
 // Calculate Total Sum Insured (TSI)
 // TSI = Limit Amount + Bank Tolerance %
-// Example: 500,000 + 10% = 550,000
 // ─────────────────────────────────────────────────────────────────────────────
 export function calculateTSI(
   limitAmount: number,
@@ -57,16 +58,14 @@ export function calculateTSI(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main premium calculation based on formula.md
-// Formula: 
-// Premises Net Premium = (Sum Insured) * (Premises Rate + RSD Rate)%
-// Total Premium = Total Net Premium + 15% VAT
+// Main premium calculation based on formula.md and minorChanges.md
 // ─────────────────────────────────────────────────────────────────────────────
 export function calculatePremium(
   premises: PremisesEntry[],
   limitAmount: number,
   bankTolerance: number,
-  rsdEnabled: boolean
+  rsdEnabled: boolean,
+  discountPercent: number = 0
 ): PremiumResult {
   const tsi = calculateTSI(limitAmount, bankTolerance);
   let totalNetPremium = 0;
@@ -97,13 +96,22 @@ export function calculatePremium(
     };
   });
 
-  const vatAmount = totalNetPremium * 0.15;
-  const totalPremium = totalNetPremium + vatAmount;
+  // VAT (15% on Original Net Premium)
+  const vatAmount = Math.round(totalNetPremium * 0.15);
+
+  // Discount Logic
+  const discountAmount = Math.round(totalNetPremium * (discountPercent / 100));
+  const discountedNetPremium = totalNetPremium - discountAmount;
+
+  // Final Total: Discounted Net + Original VAT
+  const totalPremium = discountedNetPremium + vatAmount;
 
   return {
     basePremium: basePremiumSum,
     rsdSurcharge: rsdSurchargeSum,
     totalNetPremium,
+    discountAmount,
+    discountedNetPremium,
     totalSumInsured: tsi,
     vatAmount,
     totalPremium,

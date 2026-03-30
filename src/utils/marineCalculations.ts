@@ -12,17 +12,20 @@ import {
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 export interface MarineResult {
-  tsiInForeign: number;    // Limit + Tolerance (in Foreign Currency)
-  tsiInBDT: number;        // tsiInForeign * Currency Rate
-  marinePremium: number;   // TSI * Marine Rate% (Rounded)
-  warSurcharge: number;    // TSI * WAR% (Rounded)
-  netPremium: number;      // marinePremium + warSurcharge
-  vatAmount: number;       // 15% of netPremium (Rounded)
-  stampDuty: number;       // SI-based (Rounded)
-  totalPremium: number;    // netPremium + vatAmount + stampDuty
+  tsiInForeign: number;      // Limit + Tolerance (in Foreign Currency)
+  tsiInBDT: number;          // tsiInForeign * Currency Rate
+  marinePremium: number;     // TSI * Marine Rate% (Rounded)
+  warSurcharge: number;      // TSI * WAR% (Rounded)
+  netPremium: number;        // marinePremium + warSurcharge (VAT Base)
+  discountAmount: number;    // Calculated on netPremium
+  discountedNetPremium: number; // Net Premium after discount
+  vatAmount: number;         // 15% of original netPremium (Rounded)
+  stampDuty: number;         // SI-based or fixed 50 for Land/Air
+  totalPremium: number;      // discountedNetPremium + vatAmount + stampDuty
   currencyRate: number;
-  marineRate: number;      // For display
-  warRate: number;         // For display (if enabled)
+  marineRate: number;        // For display
+  warRate: number;           // For display (if enabled)
+  discountPercent: number;   // For display
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,14 +40,16 @@ export function getMarineRate(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main calculation based on PDF Cover Notes logic
+// Main calculation based on PDF Cover Notes logic and minorChanges.md
 // ─────────────────────────────────────────────────────────────────────────────
 export function calculateMarinePremium(
   limitAmount: number,
   bankTolerance: number,
   currencyRate: number,
   premiumRate: number,
-  warEnabled: boolean
+  warEnabled: boolean,
+  transportMode: TransportMode,
+  discountPercent: number = 0
 ): MarineResult {
   // 1. Total Sum Insured (TSI)
   const tsiForeign = limitAmount * (1 + bankTolerance / 100);
@@ -55,19 +60,28 @@ export function calculateMarinePremium(
   const warRateActual = warEnabled ? WAR_SRCC_RATE : 0;
   const warSurcharge = Math.round(tsiBDT * (warRateActual / 100));
   
-  // 3. Net Premium
+  // 3. Net Premium (VAT is calculated on this original amount)
   const netPremium = marinePremium + warSurcharge;
   
-  // 4. VAT (15% Rounded per PDF Examples)
+  // 4. VAT (15% on Original Net Premium)
   const vatAmount = Math.round(netPremium * 0.15);
   
-  // 5. Stamp Duty Calculation
-  // Derived Pattern: (Math.ceil(SI / 1,00,000) * 10) + 10
-  const stampDutyLimit = 100000;
-  const stampDuty = (Math.ceil(tsiBDT / stampDutyLimit) * 10) + 10;
+  // 5. Discount Logic (Reduces the Net Premium payable)
+  const discountAmount = Math.round(netPremium * (discountPercent / 100));
+  const discountedNetPremium = netPremium - discountAmount;
+  
+  // 6. Stamp Duty Calculation
+  // Fix: For Land and Air, stamp duty is always 50 Taka.
+  let stampDuty = 0;
+  if (transportMode === "LAND" || transportMode === "AIR") {
+    stampDuty = 50;
+  } else {
+    const stampDutyLimit = 100000;
+    stampDuty = (Math.ceil(tsiBDT / stampDutyLimit) * 10) + 10;
+  }
 
-  // 6. Final Total
-  const totalPremium = netPremium + vatAmount + stampDuty;
+  // 7. Final Total
+  const totalPremium = discountedNetPremium + vatAmount + stampDuty;
 
   return {
     tsiInForeign: tsiForeign,
@@ -75,12 +89,15 @@ export function calculateMarinePremium(
     marinePremium,
     warSurcharge,
     netPremium,
+    discountAmount,
+    discountedNetPremium,
     vatAmount,
     stampDuty,
     totalPremium,
     currencyRate,
     marineRate: premiumRate,
     warRate: warRateActual,
+    discountPercent,
   };
 }
 
@@ -88,17 +105,6 @@ export function calculateMarinePremium(
 // Formatting helpers based on Fire logic
 // ─────────────────────────────────────────────────────────────────────────────
 export function formatCurrencyMarine(amount: number): string {
-  // Use Bangladesh standard (no decimals if rounded or optional)
-  return amount.toLocaleString("en-BD", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-/**
- * Format specifically for the whole number sums seen in the PDFs
- */
-export function formatWholeCurrency(amount: number): string {
   return amount.toLocaleString("en-BD", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
