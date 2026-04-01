@@ -1,56 +1,76 @@
-# Welcome to your Expo app 👋
+# Insurance Premium Calculator 🛡️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A high-fidelity, professional mobile application for calculating insurance premiums (Marine, Fire, and Motor) with industry-standard precision. Built with a focus on modern aesthetics, including specialized **Graphite Dark Mode** and **Silver Light Mode** themes.
 
-## Get started
+## 📱 Screenshots
 
-1. Install dependencies
+<p align="center">
+  <img src="Demo/Screenshot_20260401_211606_Expo Go.jpg" width="30%" alt="Main Screen" />
+  <img src="Demo/Screenshot_20260401_211718_Expo Go.jpg" width="30%" alt="Calculation Details" />
+  <img src="Demo/Screenshot_20260401_211731_Expo Go.jpg" width="30%" alt="Result Summary" />
+</p>
 
+## ✨ Key Features
+
+- **Marine Insurance**: Real-time calculation supporting Sea, Air, and Land modes with integrated War & SRCC coverage.
+- **Fire Insurance**: Advanced multi-premises layout support with automatic ROI/RSD surcharge logic.
+- **Motor Insurance**: Quick premium estimates for private and commercial vehicles.
+- **Premium UI/UX**: 
+    - **Dual Theme System**: Switch between a sleek Graphite/Charcoal dark mode and a premium Silver light mode.
+    - **Smart Results**: Result cards dynamically adapt, hiding discount rows when not applicable for a cleaner view.
+    - **Micro-animations**: Smooth transitions and interactive elements using React Native Reanimated.
+- **Optimization**: Pre-configured industry defaults (ICC C, Shop occupancy, 100% SI) for lightning-fast data entry.
+
+## 🎨 Design Language
+
+The app follows a strict modern design system inspired by premium hardware aesthetics:
+- **Dark Mode**: Deep Anthracite (#1C1F22) and Charcoal Graphite (#25292E).
+- **Light Mode**: Soft Silver (#F2F4F7) and Pure White.
+- **Accent**: International Orange (#F97316) for primary actions and brand emphasis.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Expo SDK 54](https://expo.dev/)
+- **Core**: React Native + TypeScript
+- **Styling**: NativeWind (Tailwind CSS for React Native)
+- **Animations**: React Native Reanimated
+- **Icons**: Ionicons (Expo Vector Icons)
+- **Data Persistence**: AsyncStorage for custom theme settings
+
+## 🚀 Getting Started
+
+### Prerequisites
+- [Bun](https://bun.sh/) or Node.js/npm
+- Expo Go app on your [iOS](https://apps.apple.com/app/expo-go/id982107779) or [Android](https://play.google.com/store/apps/details?id=host.exp.exponent) device
+
+### Installation
+1. **Clone the repository**:
    ```bash
-   npm install
+   git clone <your-repo-url>
+   cd insurance-premium
    ```
 
-2. Start the app
-
+2. **Install dependencies**:
    ```bash
-   npx expo start
+   bun install
    ```
 
-In the output, you'll find options to open the app in a
+3. **Start the development server**:
+   ```bash
+   bun start
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+4. **Run on Device**:
+   Scan the QR code displayed in your terminal with the Expo Go app.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+### License
+MIT
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+> [!NOTE]
+> This app was designed with accessibility and premium visual excellence in mind. Every component is custom-built to ensure a smooth, high-performance experience on both Android and iOS.
