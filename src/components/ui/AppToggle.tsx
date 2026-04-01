@@ -1,7 +1,5 @@
 /**
- * AppToggle — Miniature horizontal toggle for binary options (e.g. % vs Amount).
- * Smooth timing-based animation (non-bouncy).
- * Refined for horizontal overflow fix.
+ * AppToggle — Theme-aware miniature toggle for binary options.
  */
 
 import React, { useEffect, useState } from "react";
@@ -18,6 +16,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import Typography from "./Typography";
+import { useTheme } from "../../context/ThemeContext";
 
 interface Option {
   label: string;
@@ -37,6 +36,7 @@ export default function AppToggle({
   onChange,
   label,
 }: AppToggleProps) {
+  const { colors, isDark } = useTheme();
   const [containerWidth, setContainerWidth] = useState(0);
   const segmentWidth = containerWidth ? (containerWidth - 4) / options.length : 0;
 
@@ -64,14 +64,14 @@ export default function AppToggle({
   };
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { borderTopColor: colors.border }]}>
       {label && (
         <Typography variant="label" style={styles.headerLabel}>
           {label}
         </Typography>
       )}
       <View 
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.input, borderColor: colors.border }]}
         onLayout={onContainerLayout}
       >
         {/* Sliding Indicator */}
@@ -91,7 +91,7 @@ export default function AppToggle({
                 variant="caption"
                 style={[
                   styles.text,
-                  isActive ? styles.textActive : styles.textInactive,
+                  isActive ? { color: "#FFFFFF" } : { color: isDark ? "#8D9399" : "#64748B" },
                 ]}
               >
                 {option.label}
@@ -109,31 +109,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginVertical: 12,
-    paddingVertical: 8,
+    marginVertical: 8, // Compact
+    paddingVertical: 6, // Compact
     borderTopWidth: 1,
-    borderTopColor: "#1F2937",
     gap: 12,
-    flexWrap: "wrap", // Added wrap just in case
+    flexWrap: "wrap",
   },
   headerLabel: {
-    color: "#6B7280",
     textTransform: "uppercase",
     fontSize: 10,
     letterSpacing: 0.5,
-    flex: 1, // Allow label to take available space
+    flex: 1,
   },
   container: {
     flexDirection: "row",
-    backgroundColor: "#0F172A",
     borderRadius: 8,
-    height: 36,
+    height: 34, // Compact
     padding: 2,
     position: "relative",
     borderWidth: 1,
-    borderColor: "#2D3748",
-    flex: 1, // Dynamic width based on space
-    maxWidth: 160, // Limit growth for a toggle
+    flex: 1,
+    maxWidth: 160,
     flexShrink: 0,
   },
   activePill: {
@@ -152,12 +148,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: "Inter_600SemiBold",
-    fontSize: 12,
-  },
-  textActive: {
-    color: "#FFFFFF",
-  },
-  textInactive: {
-    color: "#9CA3AF",
+    fontSize: 11, // Compact
   },
 });

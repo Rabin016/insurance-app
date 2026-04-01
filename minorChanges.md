@@ -1,9 +1,15 @@
+- When there is no discount don't show discount row. And also don't show total without discount.
+- I like the dark version design, color and everything. But the light version is not looking good. Please make it similar to the dark version.
+- In light version bottom tab bar not in light mode, it is in dark mode. Please make it in light mode.
+- In some older android version bottom tab bar is not fully visible. Please make it visible.
+
 ## Marine Page
 
-- Remove currency input field. and adjust Limit amount.
-- For Land and air stamp duty will be always 50 taka
-- add a discount input field above calculate button. it would be in percentage(%). if discount is applied then net premium will be deducted by that percentage. and show the deducted amount in a separate field. and also show the final amount in a separate field.
+- In marine page when i first open the page default selected transport via would be sea, defaulf selected condition of cover would be ICC C, also war would be true by default unless user select otherwise any of the above.
 
 ## Fire Page
 
-- add a discount input field above calculate button. it would be in percentage(%). if discount is applied then net premium will be deducted by that percentage. and show the deducted amount in a separate field. and also show the final amount in a separate field.
+- For fire page default selected occupancy would be "Shop", Sum insured would be 100% by default and RSD would be true by default unless user select otherwise any of the above.
+- Whenever user press Add another Premises don't auto scroll al the way down instead go to next input field.
+
+> Before executing make a bast plan to make it work and then execute step by step.

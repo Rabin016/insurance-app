@@ -1,13 +1,12 @@
 /**
  * MarineScreen — Marine Insurance Premium Calculator.
  * 
- * Features:
- * - Foreign currency conversion (USD/GBP/EUR to BDT).
- * - Dynamic rates based on Transport Mode (Sea/Air/Land).
- * - Smooth timing-based animations (consistent with Fire page).
+ * Refined with:
+ * - Theme support (Light/Dark).
+ * - Compact layout and reordered results.
  */
 
-import React, { useCallback, useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -27,7 +26,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppInput from "../components/ui/AppInput";
-import AppSelect, { AppSelectRef } from "../components/ui/AppSelect";
+import AppSelect from "../components/ui/AppSelect";
 import AppSegmentedControl from "../components/ui/AppSegmentedControl";
 import AppButton from "../components/ui/AppButton";
 import AppSlider from "../components/ui/AppSlider";
@@ -37,8 +36,6 @@ import Typography from "../components/ui/Typography";
 import {
   TRANSPORT_MODES,
   MARINE_CONDITIONS,
-  MARINE_RATE_MATRIX,
-  CURRENCY_OPTIONS,
   TransportMode,
 } from "../constants/marineInsurance";
 import {
@@ -48,14 +45,17 @@ import {
   MarineResult,
 } from "../utils/marineCalculations";
 
+import { useTheme } from "../context/ThemeContext";
+
 export default function MarineScreen() {
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
-
-  // Refs for focusing
+  
+  // Refs
   const limitRef = useRef<TextInput>(null);
-  const toleranceRef = useRef<TextInput>(null);
   const rateRef = useRef<TextInput>(null);
+  const toleranceRef = useRef<TextInput>(null);
   const premiumRateRef = useRef<TextInput>(null);
 
   // State
@@ -72,14 +72,11 @@ export default function MarineScreen() {
   const [result, setResult] = useState<MarineResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Event Handlers
-  // ─────────────────────────────────────────────────────────────────────────────
-
+  // Handlers
   const handleTransportModeChange = (mode: string) => {
     const nextMode = mode as TransportMode;
     setTransportMode(nextMode);
-    setCondition(null); // Reset condition when mode changes
+    setCondition(null);
     setPremiumRate("");
     setResult(null);
   };
@@ -134,41 +131,36 @@ export default function MarineScreen() {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Rendering
-  // ─────────────────────────────────────────────────────────────────────────────
-
   return (
     <KeyboardAvoidingView 
       style={{ flex: 1 }} 
       behavior={Platform.OS === "android" ? "height" : "padding"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         {/* Header */}
         <Animated.View entering={FadeInUp.duration(400)} style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
-              <View style={styles.marineIconBadge}>
+              <View style={[styles.marineIconBadge, { backgroundColor: isDark ? "rgba(249,115,22,0.15)" : "rgba(249,115,22,0.1)", borderColor: isDark ? "rgba(249,115,22,0.3)" : "rgba(249,115,22,0.2)" }]}>
                 <Ionicons name="boat-outline" size={20} color="#F97316" />
               </View>
               <View>
-                <Typography variant="caption" style={styles.headerSubtitle}>PREMIUM CALCULATOR</Typography>
-                <Typography variant="heading" style={styles.headerTitle}>Marine Insurance</Typography>
+                <Typography variant="caption" color="#F97316" style={{ letterSpacing: 1.2, fontWeight: "700" }}>PREMIUM CALCULATOR</Typography>
+                <Typography variant="heading">Marine Insurance</Typography>
               </View>
             </View>
           </View>
-          <View style={styles.headerBorder} />
+          <View style={[styles.headerBorder, { backgroundColor: colors.border }]} />
         </Animated.View>
 
         <ScrollView
           ref={scrollRef}
           style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 60 }]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Basic Information */}
           <Animated.View entering={FadeInDown.duration(350).delay(100)}>
             <SectionCard title="Value & Currency" accent>
               <AppInput
@@ -191,7 +183,7 @@ export default function MarineScreen() {
                 onChangeText={(v) => { setCurrencyRate(v); setResult(null); }}
                 prefix="BDT"
                 placeholder="120.00"
-                hint="Current conversion rate to Bangladeshi Taka"
+                hint="Conversion rate to Bangladeshi Taka"
                 returnKeyType="next"
                 onSubmitEditing={() => toleranceRef.current?.focus()}
               />
@@ -209,7 +201,6 @@ export default function MarineScreen() {
             </SectionCard>
           </Animated.View>
 
-          {/* Transport Config */}
           <Animated.View entering={FadeInDown.duration(350).delay(200)}>
             <SectionCard title="Transport Details">
               <AppSegmentedControl
@@ -241,17 +232,16 @@ export default function MarineScreen() {
             </SectionCard>
           </Animated.View>
 
-          {/* Options */}
           <Animated.View entering={FadeInDown.duration(350).delay(300)}>
-             <SectionCard style={styles.optionCard}>
-                <AppSlider
-                  value={warEnabled}
-                  onChange={(v) => { setWarEnabled(v); setResult(null); }}
-                  label="Include War & SRCC"
-                  description="War and Strike Risks coverage (Standard 0.05%)"
-                  showProtectionIcon={true}
-                />
-              </SectionCard>
+            <SectionCard style={{ marginTop: 4 }}>
+              <AppSlider
+                value={warEnabled}
+                onChange={(v) => { setWarEnabled(v); setResult(null); }}
+                label="Include War & SRCC"
+                description="Standard coverage at 0.05%"
+                showProtectionIcon={true}
+              />
+            </SectionCard>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.duration(350).delay(350)}>
@@ -263,13 +253,11 @@ export default function MarineScreen() {
                 onChangeText={(v) => { setDiscount(v); setResult(null); }}
                 suffix="%"
                 placeholder="0"
-                hint="Percentage discount on Net Premium"
                 returnKeyType="done"
               />
             </SectionCard>
           </Animated.View>
 
-          {/* Buttons */}
           <View style={styles.actionButtons}>
             <AppButton
               title="Calculate Marine Premium"
@@ -278,17 +266,14 @@ export default function MarineScreen() {
               loading={isCalculating}
               icon={<Ionicons name="calculator" size={18} color="#fff" />}
             />
-            <View style={styles.resetButtonWrap}>
-              <AppButton
-                title="Reset Form"
-                onPress={handleReset}
-                variant="ghost"
-                disabled={isCalculating}
-              />
-            </View>
+            <AppButton
+              title="Reset Form"
+              onPress={handleReset}
+              variant="ghost"
+              disabled={isCalculating}
+            />
           </View>
 
-          {/* Results */}
           {result && <MarineResultCard result={result} />}
         </ScrollView>
       </View>
@@ -296,76 +281,66 @@ export default function MarineScreen() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Result Components
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ResultRow({ label, value, isTsi = false }: { label: string; value: string; isTsi?: boolean }) {
+function ResultRow({ label, value, isTsi = false, color }: { label: string; value: string; isTsi?: boolean; color?: string }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.resultRow}>
-      <Typography variant="body" style={isTsi ? styles.tsiLabel : styles.resultLabel}>{label}</Typography>
-      <Typography variant="body" style={styles.resultValue}>{value}</Typography>
+      <Typography variant="body" color={color || (isTsi ? "#F97316" : colors.textSecondary)} style={isTsi && { fontWeight: "700" }}>{label}</Typography>
+      <Typography variant="body" color={color || colors.text} style={{ fontWeight: "600", textAlign: "right" }}>{value}</Typography>
     </View>
   );
 }
 
 function MarineResultCard({ result }: { result: MarineResult }) {
-  const currencySymbol = "$"; // Fixed as requested by removing picker
+  const { isDark, colors } = useTheme();
+  
+  const totalBeforeDiscount = result.netPremium + result.vatAmount + result.stampDuty;
+
   return (
     <Animated.View entering={SlideInDown.duration(400).springify()}>
-      <SectionCard title="Marine Result" subtitle="Cover Note Breakdown" style={styles.resultCard}>
-        <View style={styles.resultIcon}>
-          <Ionicons name="receipt-outline" size={28} color="#F97316" />
+      <SectionCard 
+        title="Marine Result" 
+        subtitle="Cover Note Breakdown" 
+        style={[styles.resultCard, { borderColor: isDark ? "rgba(249,115,22,0.35)" : "rgba(249,115,22,0.15)", backgroundColor: isDark ? "#2E3238" : "#F8FAFC" }]}
+      >
+        <View style={[styles.resultIcon, { backgroundColor: isDark ? "rgba(249,115,22,0.1)" : "rgba(249,115,22,0.05)" }]}>
+          <Ionicons name="receipt-outline" size={24} color="#F97316" />
         </View>
 
-        <ResultRow 
-          label={`TSI in USD`} 
-          value={`${currencySymbol} ${formatCurrencyMarine(result.tsiInForeign)}`} 
-          isTsi 
-        />
-        <ResultRow 
-          label="TSI in BDT" 
-          value={`BDT ${formatCurrencyMarine(result.tsiInBDT)}`} 
-        />
+        <ResultRow label="TSI in USD" value={`$ ${formatCurrencyMarine(result.tsiInForeign)}`} isTsi />
+        <ResultRow label="TSI in BDT" value={`BDT ${formatCurrencyMarine(result.tsiInBDT)}`} />
         
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         
-        <ResultRow 
-          label={`Marine @ ${result.marineRate.toFixed(2)}%`} 
-          value={`BDT ${formatCurrencyMarine(result.marinePremium)}`} 
-        />
+        <ResultRow label={`Marine @ ${result.marineRate.toFixed(2)}%`} value={`BDT ${formatCurrencyMarine(result.marinePremium)}`} />
         {result.warSurcharge > 0 && (
-          <ResultRow 
-            label={`WAR & SRCC @ ${result.warRate.toFixed(4)}%`} 
-            value={`BDT ${formatCurrencyMarine(result.warSurcharge)}`} 
-          />
+          <ResultRow label={`WAR & SRCC @ ${result.warRate.toFixed(3)}%`} value={`BDT ${formatCurrencyMarine(result.warSurcharge)}`} />
         )}
-        
-        <View style={styles.divider} />
-        <ResultRow label="Net Premium" value={`BDT ${formatCurrencyMarine(result.netPremium)}`} />
-        
-        {result.discountPercent > 0 && (
-          <>
-            <ResultRow 
-              label={`Discount (${result.discountPercent}%)`} 
-              value={`- BDT ${formatCurrencyMarine(result.discountAmount)}`} 
-            />
-            <ResultRow 
-              label="Deducted Net Premium" 
-              value={`BDT ${formatCurrencyMarine(result.discountedNetPremium)}`} 
-            />
-          </>
-        )}
-
         <ResultRow label="VAT @ 15%" value={`BDT ${formatCurrencyMarine(result.vatAmount)}`} />
         <ResultRow label="Stamp Duty" value={`BDT ${formatCurrencyMarine(result.stampDuty)}`} />
         
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        
+        <ResultRow 
+          label="Total (Without Discount)" 
+          value={`BDT ${formatCurrencyMarine(totalBeforeDiscount)}`} 
+          color="#F97316"
+        />
+
+        {result.discountPercent > 0 && (
+          <ResultRow 
+            label={`Discount (${result.discountPercent}%)`} 
+            value={`- BDT ${formatCurrencyMarine(result.discountAmount)}`} 
+            color="#10B981"
+          />
+        )}
+        
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         
         <View style={styles.totalRow}>
-          <Typography variant="subheading" style={styles.totalLabel}>Total Premium</Typography>
+          <Typography variant="subheading" style={{ fontSize: 18 }}>Final Premium</Typography>
           <Animated.View entering={ZoomIn.duration(400).delay(200)}>
-            <Typography variant="mono" style={styles.totalValue}>
+            <Typography variant="mono" style={{ fontSize: 24, color: "#F97316" }}>
               BDT {formatCurrencyMarine(result.totalPremium)}
             </Typography>
           </Animated.View>
@@ -375,43 +350,22 @@ function MarineResultCard({ result }: { result: MarineResult }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Styles
-// ─────────────────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#0D1117" },
-  header: { paddingHorizontal: 20, paddingTop: 12 },
-  headerContent: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 14 },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  screen: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingTop: 8 },
+  headerContent: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 12 },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
   marineIconBadge: { 
-    width: 42, height: 42, borderRadius: 12, 
-    backgroundColor: "rgba(249,115,22,0.15)", borderWidth: 1, borderColor: "rgba(249,115,22,0.3)", 
-    alignItems: "center", justifyContent: "center" 
+    width: 38, height: 38, borderRadius: 10, 
+    borderWidth: 1, alignItems: "center", justifyContent: "center" 
   },
-  headerSubtitle: { color: "#F97316", letterSpacing: 1.2, fontSize: 10, marginBottom: 2 },
-  headerTitle: { fontSize: 22 },
-  headerBorder: { height: 1, backgroundColor: "#1F2937", marginHorizontal: -20 },
+  headerBorder: { height: 1.5, marginHorizontal: -20 },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, gap: 12 },
-  
-  currencyRow: { flexDirection: "row", gap: 12 },
-  currencyInputWrap: { flex: 1.6 },
-  currencySelectWrap: { flex: 1 },
-  
-  optionCard: { marginTop: 4 },
-  actionButtons: { gap: 12, marginTop: 8 },
-  resetButtonWrap: { marginTop: 4 },
-  
-  // Results
-  resultCard: { borderColor: "rgba(249,115,22,0.3)", backgroundColor: "#1A1F2E", marginTop: 12 },
-  resultIcon: { alignSelf: "center", marginBottom: 16, width: 56, height: 56, borderRadius: 28, backgroundColor: "rgba(249,115,22,0.12)", borderWidth: 1, borderColor: "rgba(249,115,22,0.3)", alignItems: "center", justifyContent: "center" },
-  resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8 },
-  tsiLabel: { color: "#F97316", fontFamily: "Inter_600SemiBold" },
-  resultLabel: { color: "#9CA3AF" },
-  resultValue: { color: "#E5E7EB", fontFamily: "Inter_500Medium", textAlign: "right" },
-  divider: { height: 1, backgroundColor: "#2D3748", marginVertical: 10 },
+  scrollContent: { padding: 14, gap: 10 },
+  actionButtons: { gap: 10, marginTop: 4 },
+  resultCard: { borderWidth: 1.5, marginTop: 10 },
+  resultIcon: { alignSelf: "center", marginBottom: 12, width: 50, height: 50, borderRadius: 25, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)", alignItems: "center", justifyContent: "center" },
+  resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
+  divider: { height: 1, marginVertical: 8, opacity: 0.5 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4 },
-  totalLabel: { color: "#F9FAFB" },
-  totalValue: { fontSize: 24, color: "#F97316" },
 });

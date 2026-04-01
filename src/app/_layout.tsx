@@ -10,24 +10,46 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { DarkTheme, ThemeProvider } from "@react-navigation/native";
-import "../global.css";
-
-// Custom theme to match our app and prevent white flashes
-const AppTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: "#0D1117",
-    card: "#0D1117",
-    text: "#F9FAFB",
-    border: "#1F2937",
-    primary: "#F97316",
-  },
-};
+import { ThemeProvider as CustomThemeProvider, useTheme } from "../context/ThemeContext";
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from "@react-navigation/native";
 
 // Keep splash screen visible while fonts load
 SplashScreen.preventAutoHideAsync();
+
+function LayoutContent() {
+  const { isDark, colors } = useTheme();
+
+  const NavTheme = isDark ? {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      primary: "#F97316",
+    },
+  } : {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      primary: "#F97316",
+    },
+  };
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+      <NavThemeProvider value={NavTheme}>
+        <StatusBar style={isDark ? "light" : "dark"} backgroundColor={colors.background} />
+        <Stack screenOptions={{ headerShown: false }} />
+      </NavThemeProvider>
+    </GestureHandlerRootView>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -38,7 +60,6 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    // Hide splash screen once fonts are loaded or an error occurred
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
@@ -49,11 +70,8 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#0D1117" }}>
-      <ThemeProvider value={AppTheme}>
-        <StatusBar style="light" backgroundColor="#0D1117" />
-        <Stack screenOptions={{ headerShown: false }} />
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <CustomThemeProvider>
+      <LayoutContent />
+    </CustomThemeProvider>
   );
 }

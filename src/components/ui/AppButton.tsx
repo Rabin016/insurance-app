@@ -1,7 +1,6 @@
 /**
- * AppButton — Reusable animated button component.
- * Variants: primary (orange fill), secondary (outline), ghost (transparent).
- * Press animation uses react-native-reanimated for smooth 60fps scale effect.
+ * AppButton — Theme-aware button component.
+ * Supports primary (orange), secondary, and ghost variants.
  */
 
 import React from "react";
@@ -9,25 +8,24 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  Text,
-  View,
+  ViewStyle,
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+import Typography from "./Typography";
+import { useTheme } from "../../context/ThemeContext";
 
 interface AppButtonProps {
   title: string;
   onPress: () => void;
-  variant?: ButtonVariant;
+  variant?: "primary" | "secondary" | "ghost";
   loading?: boolean;
   disabled?: boolean;
   icon?: React.ReactNode;
-  fullWidth?: boolean;
+  style?: ViewStyle;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -39,9 +37,9 @@ export default function AppButton({
   loading = false,
   disabled = false,
   icon,
-  fullWidth = true,
+  style,
 }: AppButtonProps) {
-  // Shared value for press animation
+  const { colors, isDark } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -49,120 +47,87 @@ export default function AppButton({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
+    scale.value = withSpring(0.96);
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+    scale.value = withSpring(1);
   };
 
-  const isDisabled = disabled || loading;
+  // Determine styles based on variant and theme
+  const getButtonStyles = () => {
+    switch (variant) {
+      case "primary":
+        return {
+          bg: "#F97316",
+          text: "#FFFFFF",
+          border: "transparent",
+        };
+      case "secondary":
+        return {
+          bg: isDark ? "#1F2937" : "#E2E8F0",
+          text: colors.text,
+          border: "transparent",
+        };
+      case "ghost":
+        return {
+          bg: "transparent",
+          text: "#F97316",
+          border: colors.border,
+        };
+    }
+  };
+
+  const { bg, text, border } = getButtonStyles();
 
   return (
     <AnimatedPressable
       style={[
-        styles.base,
-        styles[variant],
-        fullWidth && styles.fullWidth,
-        isDisabled && styles.disabled,
+        styles.button,
+        { backgroundColor: bg, borderColor: border, borderWidth: variant === "ghost" ? 1 : 0 },
+        disabled && styles.disabled,
         animatedStyle,
+        style,
       ]}
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      disabled={isDisabled}
-      accessibilityRole="button"
-      accessibilityLabel={title}
+      disabled={disabled || loading}
     >
-      <View style={styles.content}>
-        {/* Loading spinner */}
-        {loading ? (
-          <ActivityIndicator
-            size="small"
-            color={variant === "primary" ? "#fff" : "#F97316"}
-          />
-        ) : (
-          <>
-            {icon && <View style={styles.iconWrap}>{icon}</View>}
-            <Text style={[styles.label, styles[`${variant}Text` as keyof typeof styles] as any]}>
-              {title}
-            </Text>
-          </>
-        )}
-      </View>
+      {loading ? (
+        <ActivityIndicator color={text} size="small" />
+      ) : (
+        <>
+          {icon && <Animated.View style={styles.icon}>{icon}</Animated.View>}
+          <Typography
+            variant="subheading"
+            style={[styles.text, { color: text }]}
+          >
+            {title}
+          </Typography>
+        </>
+      )}
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
+  button: {
+    height: 52, // Slightly more compact but still touch-friendly
     borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 50,
-  },
-  fullWidth: {
-    width: "100%",
-  },
-  // Primary — solid orange fill
-  primary: {
-    backgroundColor: "#F97316",
-    shadowColor: "#F97316",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  primaryText: {
-    color: "#fff",
-    fontFamily: "Inter_700Bold",
-    fontSize: 16,
-  },
-  // Secondary — outlined
-  secondary: {
-    backgroundColor: "transparent",
-    borderWidth: 1.5,
-    borderColor: "#F97316",
-  },
-  secondaryText: {
-    color: "#F97316",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 15,
-  },
-  // Ghost — no background, no border
-  ghost: {
-    backgroundColor: "transparent",
-  },
-  ghostText: {
-    color: "#9CA3AF",
-    fontFamily: "Inter_500Medium",
-    fontSize: 14,
-  },
-  // Danger — red tint
-  danger: {
-    backgroundColor: "rgba(239,68,68,0.12)",
-    borderWidth: 1,
-    borderColor: "#EF4444",
-  },
-  dangerText: {
-    color: "#EF4444",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 14,
-  },
-  disabled: {
-    opacity: 0.45,
-  },
-  content: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
+    paddingHorizontal: 20,
   },
-  label: {
+  disabled: {
+    opacity: 0.5,
+  },
+  text: {
     textAlign: "center",
+    fontFamily: "Inter_700Bold",
   },
-  iconWrap: {
-    marginRight: 4,
+  icon: {
+    marginRight: 8,
   },
 });

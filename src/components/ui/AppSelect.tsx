@@ -1,7 +1,7 @@
 /**
- * AppSelect — Reusable dropdown selector.
+ * AppSelect — Theme-aware reusable dropdown selector.
  * Opens a bottom-sheet style modal with a FlatList of options.
- * Updated with labelIcon and forwardRef.
+ * Updated for compact layout and theme scalability.
  */
 
 import React, { useImperativeHandle, useState } from "react";
@@ -20,6 +20,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import Typography from "./Typography";
+import { useTheme } from "../../context/ThemeContext";
 
 export interface SelectOption {
   label: string;
@@ -47,13 +48,14 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
   value,
   onChange,
   labelIcon,
-  placeholder = "Select an option",
+  placeholder = "Select option",
   error,
 }, ref) => {
+  const { colors, isDark } = useTheme();
   const [visible, setVisible] = useState(false);
 
   const arrowRotation = useSharedValue(0);
-  const sheetTranslateY = useSharedValue(300);
+  const sheetTranslateY = useSharedValue(400);
 
   const arrowStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${arrowRotation.value}deg` }],
@@ -71,7 +73,7 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
 
   const closeSheet = () => {
     arrowRotation.value = withTiming(0, { duration: 250 });
-    sheetTranslateY.value = withTiming(300, { duration: 250 });
+    sheetTranslateY.value = withTiming(400, { duration: 250 });
     setTimeout(() => setVisible(false), 260);
   };
 
@@ -89,31 +91,33 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
 
   return (
     <View style={styles.wrapper}>
-      {/* Label with optional Icon */}
+      {/* Label Container */}
       <View style={styles.labelContainer}>
         {labelIcon && (
           <Ionicons name={labelIcon} size={14} color="#F97316" style={styles.icon} />
         )}
-        <Typography variant="label" style={styles.label}>
+        <Typography variant="label">
           {label}
         </Typography>
       </View>
 
       {/* Trigger button */}
       <Pressable
-        style={[styles.trigger, error ? styles.triggerError : null]}
+        style={[
+          styles.trigger, 
+          { backgroundColor: colors.input, borderColor: colors.border },
+          error ? { borderColor: "#EF4444" } : null
+        ]}
         onPress={openSheet}
-        accessibilityRole="button"
-        accessibilityLabel={label}
       >
         <Typography
           variant="body"
-          style={[styles.triggerText, !selectedLabel && styles.placeholder]}
+          style={[styles.triggerText, !selectedLabel && { color: isDark ? "#4B5563" : "#94A3B8" }]}
         >
           {selectedLabel ?? placeholder}
         </Typography>
         <Animated.View style={arrowStyle}>
-          <Ionicons name="chevron-down" size={18} color="#9CA3AF" />
+          <Ionicons name="chevron-down" size={18} color={isDark ? "#8D9399" : "#64748B"} />
         </Animated.View>
       </Pressable>
 
@@ -133,8 +137,8 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
         statusBarTranslucent
       >
         <Pressable style={styles.overlay} onPress={closeSheet} />
-        <Animated.View style={[styles.sheet, sheetStyle]}>
-          <View style={styles.handle} />
+        <Animated.View style={[styles.sheet, { backgroundColor: colors.card }, sheetStyle]}>
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
           <Typography variant="subheading" style={styles.sheetTitle}>
             {label}
           </Typography>
@@ -145,13 +149,13 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
               const isSelected = item.value === value;
               return (
                 <TouchableOpacity
-                  style={[styles.option, isSelected && styles.optionSelected]}
+                  style={[styles.option, isSelected && { backgroundColor: "rgba(249,115,22,0.12)" }]}
                   onPress={() => handleSelect(item.value)}
                   activeOpacity={0.7}
                 >
                   <Typography
                     variant="body"
-                    style={isSelected ? styles.optionTextSelected : styles.optionText}
+                    style={isSelected ? styles.optionTextSelected : null}
                   >
                     {item.label}
                   </Typography>
@@ -161,7 +165,7 @@ const AppSelect = React.forwardRef<AppSelectRef, AppSelectProps>(({
                 </TouchableOpacity>
               );
             }}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: colors.border }]} />}
           />
         </Animated.View>
       </Modal>
@@ -173,43 +177,30 @@ export default AppSelect;
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 12,
+    marginBottom: 10, // Compact
   },
   labelContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 4,
     gap: 6,
   },
   icon: {
     marginTop: -1,
   },
-  label: {
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
   trigger: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#111827",
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: "#2D3748",
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    minHeight: 50,
-  },
-  triggerError: {
-    borderColor: "#EF4444",
+    paddingHorizontal: 12,
+    paddingVertical: 12, // Compact
+    minHeight: 46,
   },
   triggerText: {
-    color: "#F9FAFB",
-    fontFamily: "Inter_500Medium",
     flex: 1,
-  },
-  placeholder: {
-    color: "#4B5563",
+    fontSize: 15,
   },
   errorText: {
     color: "#EF4444",
@@ -218,14 +209,13 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   sheet: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#1E293B",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -235,42 +225,32 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   handle: {
-    width: 40,
+    width: 36,
     height: 4,
     borderRadius: 4,
-    backgroundColor: "#374151",
     alignSelf: "center",
     marginBottom: 16,
   },
   sheetTitle: {
     marginBottom: 16,
-    color: "#F9FAFB",
+    textAlign: "center",
   },
   option: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    borderRadius: 8,
-  },
-  optionSelected: {
-    backgroundColor: "rgba(249,115,22,0.1)",
+    paddingVertical: 12, // Compact
     paddingHorizontal: 12,
-  },
-  optionText: {
-    color: "#D1D5DB",
-    fontFamily: "Inter_400Regular",
-    fontSize: 15,
+    borderRadius: 10,
+    marginVertical: 2,
   },
   optionTextSelected: {
     color: "#F97316",
     fontFamily: "Inter_600SemiBold",
-    fontSize: 15,
   },
   separator: {
     height: 1,
-    backgroundColor: "#1F2937",
     marginHorizontal: 4,
+    opacity: 0.5,
   },
 });

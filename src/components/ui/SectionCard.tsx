@@ -1,6 +1,7 @@
 /**
- * SectionCard — Glassmorphism-style card wrapper.
+ * SectionCard — Theme-aware card wrapper.
  * Used to group related form fields visually.
+ * Reduced padding for a more compact layout as requested.
  */
 
 import React from "react";
@@ -10,6 +11,7 @@ import {
   StyleSheet,
 } from "react-native";
 import Typography from "./Typography";
+import { useTheme } from "../../context/ThemeContext";
 
 interface SectionCardProps extends ViewProps {
   title?: string;
@@ -26,8 +28,22 @@ export default function SectionCard({
   style,
   ...props
 }: SectionCardProps) {
+  const { colors, isDark } = useTheme();
+
   return (
-    <View style={[styles.card, accent && styles.accentBorder, style]} {...props}>
+    <View 
+      style={[
+        styles.card, 
+        { 
+          backgroundColor: colors.card, 
+          borderColor: colors.border,
+          shadowOpacity: isDark ? 0.3 : 0.1,
+        },
+        accent && styles.accentBorder, 
+        style
+      ]} 
+      {...props}
+    >
       {/* Card header with title & subtitle */}
       {(title || subtitle) && (
         <View style={styles.header}>
@@ -35,7 +51,7 @@ export default function SectionCard({
             <Typography variant="subheading">{title}</Typography>
           )}
           {subtitle && (
-            <Typography variant="caption" style={styles.subtitle}>
+            <Typography variant="caption">
               {subtitle}
             </Typography>
           )}
@@ -48,28 +64,21 @@ export default function SectionCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#1E293B",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#2D3748",
-    padding: 16,
-    marginBottom: 12,
-    // Subtle shadow for depth
+    borderWidth: 1.5,
+    padding: 14, // Slightly reduced for compact layout
+    marginBottom: 10, // Slightly reduced
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   accentBorder: {
-    borderLeftWidth: 3,
+    borderLeftWidth: 4,
     borderLeftColor: "#F97316",
   },
   header: {
-    marginBottom: 14,
-    gap: 4,
-  },
-  subtitle: {
-    marginTop: 2,
+    marginBottom: 12,
+    gap: 2,
   },
 });

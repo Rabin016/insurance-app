@@ -1,9 +1,5 @@
 /**
- * AppSlider — Toggle slider for binary on/off options (e.g., RSD Coverage).
- * 
- * Refined with:
- * - Brand-consistent Fire Insurance theme for RSD icon circles.
- * - Smooth slide (withTiming).
+ * AppSlider — Theme-aware toggle slider for binary on/off options.
  */
 
 import React, { useEffect } from "react";
@@ -17,6 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import Typography from "./Typography";
+import { useTheme } from "../../context/ThemeContext";
 
 interface AppSliderProps {
   value: boolean;
@@ -26,12 +23,10 @@ interface AppSliderProps {
   showProtectionIcon?: boolean; 
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shield with Heart Icon - Updated to Brand Yellowish/Orange Theme
-// ─────────────────────────────────────────────────────────────────────────────
 function ProtectionIcon() {
+  const { isDark } = useTheme();
   return (
-    <View style={styles.iconCircle}>
+    <View style={[styles.iconCircle, { backgroundColor: isDark ? "rgba(249,115,22,0.12)" : "rgba(249,115,22,0.08)" }]}>
       <View style={styles.shieldWrapper}>
         <Ionicons name="shield" size={18} color="#F97316" />
         <View style={styles.heartWrapper}>
@@ -49,6 +44,7 @@ export default function AppSlider({
   description,
   showProtectionIcon = false,
 }: AppSliderProps) {
+  const { colors, isDark } = useTheme();
   const progress = useSharedValue(value ? 1 : 0);
 
   useEffect(() => {
@@ -70,7 +66,7 @@ export default function AppSlider({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      ["#374151", "#F97316"]
+      [isDark ? "#3A3F45" : "#E2E8F0", "#F97316"]
     ),
   }));
 
@@ -85,11 +81,11 @@ export default function AppSlider({
       <View style={styles.leftSection}>
         {showProtectionIcon && <ProtectionIcon />}
         <View style={styles.textContent}>
-          <Typography variant="subheading" style={styles.label}>
+          <Typography variant="subheading">
             {label}
           </Typography>
           {description && (
-            <Typography variant="caption" style={styles.description}>
+            <Typography variant="caption">
               {description}
             </Typography>
           )}
@@ -109,7 +105,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    paddingVertical: 6, // Compact
     gap: 12,
   },
   leftSection: {
@@ -120,28 +116,16 @@ const styles = StyleSheet.create({
   },
   textContent: {
     flex: 1,
-    gap: 2,
+    gap: 1, // Compact
   },
-  label: {
-    color: "#F3F4F6",
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-  },
-  description: {
-    color: "#9CA3AF",
-    lineHeight: 16,
-    fontSize: 12,
-  },
-  // Icon Styles - Now matching Fire Insurance Logo theme (Yellowish/Orange)
   iconCircle: {
-    width: 40,
-    height: 48,
-    borderRadius: 12, // Matches Fire logo borderRadius
-    backgroundColor: "rgba(249,115,22,0.15)", // Translucent orange
+    width: 38,
+    height: 44,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(249,115,22,0.3)", // Translucent orange border
+    borderColor: "rgba(249,115,22,0.2)",
   },
   shieldWrapper: {
     alignItems: "center",
@@ -154,22 +138,22 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   track: {
-    width: 52,
-    height: 28,
-    borderRadius: 14,
+    width: 50,
+    height: 26,
+    borderRadius: 13,
     padding: 2,
     justifyContent: "center",
     flexShrink: 0,
   },
   thumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: "#FFFFFF",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
     elevation: 3,
   },
 });

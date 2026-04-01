@@ -84,7 +84,7 @@ function TabButton({
         <Ionicons
           name={isFocused ? tab.activeIcon : tab.icon}
           size={22}
-          color={isFocused ? "#F97316" : "#4B5563"}
+          color={isFocused ? "#F97316" : "#5C6370"}
         />
 
         {/* Label */}
@@ -136,9 +136,9 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
-    backgroundColor: "#111827",
+    backgroundColor: "#1C1F22",
     borderTopWidth: 1,
-    borderTopColor: "#1F2937",
+    borderTopColor: "#3A3F45",
     paddingBottom: Platform.OS === "android" ? 8 : 20,
     paddingTop: 8,
     paddingHorizontal: 8,
@@ -177,6 +177,6 @@ const styles = StyleSheet.create({
     color: "#F97316",
   },
   tabLabelInactive: {
-    color: "#4B5563",
+    color: "#5C6370",
   },
 });

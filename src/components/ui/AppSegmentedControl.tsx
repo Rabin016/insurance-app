@@ -1,10 +1,5 @@
 /**
- * AppSegmentedControl — Horizontal segmented picker.
- * 
- * Refined with:
- * - Dynamic layout measurement (onLayout) to prevent screen overflow.
- * - Smooth slide animation (withTiming) without bouncy spring effects.
- * - Dark Navy (#111827) and Orange (#F97316) theme alignment.
+ * AppSegmentedControl — Theme-aware horizontal segmented picker.
  */
 
 import React, { useEffect, useState } from "react";
@@ -22,6 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Typography from "./Typography";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../context/ThemeContext";
 
 interface Option {
   label: string;
@@ -36,9 +32,6 @@ interface AppSegmentedControlProps {
   onChange: (value: string) => void;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Custom Icon (Triangle, Square, Circle) in Theme Orange
-// ─────────────────────────────────────────────────────────────────────────────
 function CustomShapesIcon() {
   return (
     <View style={styles.iconContainer}>
@@ -59,10 +52,10 @@ export default function AppSegmentedControl({
   value,
   onChange,
 }: AppSegmentedControlProps) {
+  const { colors, isDark } = useTheme();
   const [containerWidth, setContainerWidth] = useState(0);
   const segmentWidth = containerWidth ? (containerWidth - 4) / options.length : 0;
 
-  // Animation for the highlighter pill
   const activeIndex = options.findIndex((o) => o.value === value);
   const translateX = useSharedValue(0);
 
@@ -70,7 +63,7 @@ export default function AppSegmentedControl({
     if (activeIndex !== -1 && segmentWidth > 0) {
       translateX.value = withTiming(activeIndex * segmentWidth, {
         duration: 250,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Standard smooth ease
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
     }
   }, [activeIndex, segmentWidth]);
@@ -88,25 +81,21 @@ export default function AppSegmentedControl({
 
   return (
     <View style={styles.wrapper}>
-      {/* Header with Custom Icon matching AppInput label style */}
       <View style={styles.header}>
         <CustomShapesIcon />
-        <Typography variant="label" style={styles.headerText}>
+        <Typography variant="label">
           {label}
         </Typography>
       </View>
 
-      {/* Main Container - Themed to match AppInput/AppSelect trigger */}
       <View 
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.input, borderColor: colors.border }]}
         onLayout={onContainerLayout}
       >
-        {/* Sliding Highlight Pill */}
         {activeIndex !== -1 && (
           <Animated.View style={[styles.activePill, animatedStyle]} />
         )}
 
-        {/* Options */}
         {options.map((option) => {
           const isActive = option.value === value;
           return (
@@ -119,7 +108,7 @@ export default function AppSegmentedControl({
                 variant="caption"
                 style={[
                   styles.subLabel,
-                  isActive ? styles.textActive : styles.textInactive,
+                  isActive ? { color: "#FFFFFF" } : { color: isDark ? "#8D9399" : "#94A3B8" },
                 ]}
               >
                 {option.subLabel}
@@ -128,7 +117,7 @@ export default function AppSegmentedControl({
                 variant="body"
                 style={[
                   styles.label,
-                  isActive ? styles.textActive : styles.textInactive,
+                  isActive ? { color: "#E2E5E9" } : { color: isDark ? "#8D9399" : "#334155" },
                 ]}
               >
                 {option.label}
@@ -143,29 +132,22 @@ export default function AppSegmentedControl({
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 16,
-    marginTop: 8,
+    marginBottom: 12, // Compact
+    marginTop: 4,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
-    gap: 10,
-  },
-  headerText: {
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    color: "#F9FAFB", // Light gray/white text
+    marginBottom: 4,
+    gap: 8,
   },
   container: {
     flexDirection: "row",
-    backgroundColor: "#111827", // Matches AppInput/Select background
     borderRadius: 12,
-    height: 64,
+    height: 58, // Compact
     padding: 2,
     position: "relative",
     borderWidth: 1.5,
-    borderColor: "#2D3748",
     overflow: "hidden",
   },
   activePill: {
@@ -173,12 +155,12 @@ const styles = StyleSheet.create({
     top: 2,
     bottom: 2,
     left: 2,
-    backgroundColor: "#F97316", // Brand Orange for selection
+    backgroundColor: "#F97316",
     borderRadius: 10,
     shadowColor: "#F97316",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
     elevation: 4,
   },
   segment: {
@@ -188,23 +170,16 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   subLabel: {
-    fontSize: 9,
+    fontSize: 8, // Compact
     fontFamily: "Inter_600SemiBold",
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: 1,
     textTransform: "uppercase",
   },
   label: {
     fontFamily: "Inter_700Bold",
-    fontSize: 15,
+    fontSize: 14, // Compact
   },
-  textActive: {
-    color: "#FFFFFF",
-  },
-  textInactive: {
-    color: "#6B7280", // Standard muted gray
-  },
-  // Icon specific styles (Brand Orange)
   iconContainer: {
     width: 20,
     height: 18,
