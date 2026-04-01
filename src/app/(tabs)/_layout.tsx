@@ -6,7 +6,7 @@
 
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -14,6 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Pressable } from "react-native";
 import Typography from "../../components/ui/Typography";
+import { useTheme } from "../../context/ThemeContext";
 
 // Tab configuration
 const TAB_CONFIG = [
@@ -53,6 +54,7 @@ function TabButton({
   isFocused: boolean;
   onPress: () => void;
 }) {
+  const { colors, isDark } = useTheme();
   const scale = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -71,28 +73,28 @@ function TabButton({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={styles.tabButton}
+      style={{ flex: 1, alignItems: "center" }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
       accessibilityLabel={tab.title}
     >
-      <Animated.View style={[styles.tabInner, animStyle]}>
+      <Animated.View style={[{ alignItems: "center", justifyContent: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12, gap: 3, position: "relative" }, animStyle]}>
         {/* Active indicator pill */}
-        {isFocused && <View style={styles.activePill} />}
+        {isFocused && <View style={{ position: "absolute", top: -2, width: 32, height: 3, borderRadius: 2, backgroundColor: "#F97316" }} />}
 
         {/* Icon */}
         <Ionicons
           name={isFocused ? tab.activeIcon : tab.icon}
           size={22}
-          color={isFocused ? "#F97316" : "#5C6370"}
+          color={isFocused ? "#F97316" : (isDark ? "#8D9399" : "#64748B")}
         />
 
         {/* Label */}
         <Typography
           variant="caption"
           style={[
-            styles.tabLabel,
-            isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
+            { fontSize: 11, fontFamily: "Inter_500Medium" },
+            isFocused ? { color: "#F97316" } : { color: isDark ? "#8D9399" : "#64748B" },
           ]}
         >
           {tab.title}
@@ -103,14 +105,29 @@ function TabButton({
 }
 
 export default function TabsLayout() {
+  const { colors, isDark } = useTheme();
+
   return (
     <Tabs
       screenOptions={{ 
         headerShown: false,
-        animation: "shift", // or "slide_from_right" / "fade"
+        animation: "shift",
       }}
       tabBar={({ state, navigation }) => (
-        <View style={styles.tabBar}>
+        <View style={{
+          flexDirection: "row",
+          backgroundColor: colors.card,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          paddingBottom: Platform.OS === "android" ? 12 : 24, // Increased Android padding
+          paddingTop: 8,
+          paddingHorizontal: 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: isDark ? 0.4 : 0.05,
+          shadowRadius: 16,
+          elevation: 20,
+        }}>
           {TAB_CONFIG.map((tab, index) => {
             const isFocused = state.index === index;
             return (
@@ -132,51 +149,3 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    flexDirection: "row",
-    backgroundColor: "#1C1F22",
-    borderTopWidth: 1,
-    borderTopColor: "#3A3F45",
-    paddingBottom: Platform.OS === "android" ? 8 : 20,
-    paddingTop: 8,
-    paddingHorizontal: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 20,
-  },
-  tabButton: {
-    flex: 1,
-    alignItems: "center",
-  },
-  tabInner: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    gap: 3,
-    position: "relative",
-  },
-  activePill: {
-    position: "absolute",
-    top: -2,
-    width: 32,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: "#F97316",
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-  },
-  tabLabelActive: {
-    color: "#F97316",
-  },
-  tabLabelInactive: {
-    color: "#5C6370",
-  },
-});

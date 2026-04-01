@@ -65,9 +65,9 @@ export default function MarineScreen() {
   const [discount, setDiscount] = useState("");
   
   const [transportMode, setTransportMode] = useState<TransportMode>("SEA");
-  const [condition, setCondition] = useState<string | null>(null);
-  const [premiumRate, setPremiumRate] = useState("");
-  const [warEnabled, setWarEnabled] = useState(false);
+  const [condition, setCondition] = useState<string | null>("ICC_C"); // Default to ICC C
+  const [premiumRate, setPremiumRate] = useState("0.30"); // Default rate for ICC C
+  const [warEnabled, setWarEnabled] = useState(true); // Default to true
   
   const [result, setResult] = useState<MarineResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -124,9 +124,9 @@ export default function MarineScreen() {
     setCurrencyRate("120.00");
     setDiscount("");
     setTransportMode("SEA");
-    setCondition(null);
-    setPremiumRate("");
-    setWarEnabled(false);
+    setCondition("ICC_C");
+    setPremiumRate("0.30");
+    setWarEnabled(true);
     setResult(null);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
@@ -321,21 +321,21 @@ function MarineResultCard({ result }: { result: MarineResult }) {
         
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         
-        <ResultRow 
-          label="Total (Without Discount)" 
-          value={`BDT ${formatCurrencyMarine(totalBeforeDiscount)}`} 
-          color="#F97316"
-        />
-
-        {result.discountPercent > 0 && (
-          <ResultRow 
-            label={`Discount (${result.discountPercent}%)`} 
-            value={`- BDT ${formatCurrencyMarine(result.discountAmount)}`} 
-            color="#10B981"
-          />
-        )}
-        
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        {result.discountAmount > 0 ? (
+          <>
+            <ResultRow 
+              label="Total (Without Discount)" 
+              value={`BDT ${formatCurrencyMarine(totalBeforeDiscount)}`} 
+              color="#F97316"
+            />
+            <ResultRow 
+              label={`Discount (${result.discountPercent}%)`} 
+              value={`- BDT ${formatCurrencyMarine(result.discountAmount)}`} 
+              color="#10B981"
+            />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          </>
+        ) : null}
         
         <View style={styles.totalRow}>
           <Typography variant="subheading" style={{ fontSize: 18 }}>Final Premium</Typography>

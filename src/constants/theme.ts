@@ -30,16 +30,16 @@ export const COLORS = {
   },
   
   light: {
-    background: "#F0F2F5",
-    card: "#FFFFFF",
-    cardSecondary: "#F8FAFC",
-    border: "#E2E8F0",
-    text: "#1E293B",
-    textSecondary: "#64748B",
-    textMuted: "#94A3B8",
-    input: "#FFFFFF",
-    inputBorder: "#E2E8F0",
-    adornment: "#F1F5F9",
+    background: "#F2F4F7",   // Soft Silver Background
+    card: "#FFFFFF",          // Pure White Card
+    cardSecondary: "#F9FAFB", // Subtle Section Insets
+    border: "#E4E7EB",        // Clean Border
+    text: "#101828",          // Deep Graphite Text
+    textSecondary: "#475467", // Muted Slate Grey
+    textMuted: "#98A2B3",     // Placeholder/Disabled Grey
+    input: "#FFFFFF",         // Clean White Input
+    inputBorder: "#D0D5DD",   // Defined Input Border
+    adornment: "#F2F4F7",     // Matches Background
   },
 };
 

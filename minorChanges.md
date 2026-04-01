@@ -10,6 +10,6 @@
 ## Fire Page
 
 - For fire page default selected occupancy would be "Shop", Sum insured would be 100% by default and RSD would be true by default unless user select otherwise any of the above.
-- Whenever user press Add another Premises don't auto scroll al the way down instead go to next input field.
+- Whenever user press Add another Premises don't auto scroll all the way down instead go to next input field.
 
 > Before executing make a bast plan to make it work and then execute step by step.

@@ -59,9 +59,9 @@ function newPremises(): PremisesEntry {
   return {
     id: generateId(),
     riskClass: "CLASS_I",
-    occupancyType: null,
-    premiumRate: "",
-    sumInsured: "",
+    occupancyType: "SHOP", // Default to Shop
+    premiumRate: "0.15",    // Default rate for Class I Shop
+    sumInsured: "100",      // Default to 100%
     isPercentage: true,
   };
 }
@@ -204,7 +204,7 @@ export default function FireScreen() {
   const [bankTolerance, setBankTolerance] = useState("10");
   const [discount, setDiscount] = useState("");
   const [premises, setPremises] = useState([newPremises()]);
-  const [rsdEnabled, setRsdEnabled] = useState(false);
+  const [rsdEnabled, setRsdEnabled] = useState(true); // Default to true
   const [result, setResult] = useState<PremiumResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -226,7 +226,13 @@ export default function FireScreen() {
     const p = newPremises();
     setPremises((prev) => [...prev, p]);
     setResult(null);
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    // Focus the new occupancy selector after a short delay
+    setTimeout(() => {
+      const refs = premisesRefs.current[p.id];
+      if (refs && refs.occ.current) {
+        refs.occ.current.open(); // Corrected from toggle() to open()
+      }
+    }, 150);
   };
 
   const handleReset = () => {
@@ -234,7 +240,7 @@ export default function FireScreen() {
     setBankTolerance("10");
     setDiscount("");
     setPremises([newPremises()]);
-    setRsdEnabled(false);
+    setRsdEnabled(true);
     setResult(null);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
@@ -417,21 +423,22 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
         
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         
-        <DetailRow 
-          label="Total (Without Discount)" 
-          value={`BDT ${formatCurrency(totalBeforeDiscount)}`} 
-          color="#F97316"
-        />
-
-        {result.discountAmount > 0 && (
-          <DetailRow 
-            label={`Discount (${result.discountAmount > 0 ? "Applied" : ""})`} 
-            value={`- BDT ${formatCurrency(result.discountAmount)}`} 
-            color="#10B981"
-          />
-        )}
+        {result.discountAmount > 0 ? (
+          <>
+            <DetailRow 
+              label="Total (Without Discount)" 
+              value={`BDT ${formatCurrency(totalBeforeDiscount)}`} 
+              color="#F97316"
+            />
+            <DetailRow 
+              label={`Discount (${result.discountAmount > 0 ? "Applied" : ""})`} 
+              value={`- BDT ${formatCurrency(result.discountAmount)}`} 
+              color="#10B981"
+            />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          </>
+        ) : null}
         
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <View style={styles.totalRow}>
           <Typography variant="subheading" style={{ fontSize: 18 }}>Final Premium</Typography>
           <Animated.View entering={ZoomIn.duration(400).delay(200)}>
