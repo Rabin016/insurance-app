@@ -2,10 +2,10 @@
   "expo": {
     "name": "Insurence Premium",
     "slug": "insurence-premium",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "insurp",
+    "scheme": "insurence-premium",
     "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
