@@ -1,25 +1,13 @@
-import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  Image,
-  Linking,
-  Share,
-  Platform,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../context/ThemeContext";
-import Typography from "../../components/ui/Typography";
-import SectionCard from "../../components/ui/SectionCard";
+import React from "react";
+import { Linking, ScrollView, Share, StyleSheet, View } from "react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AppButton from "../../components/ui/AppButton";
 import AppSegmentedControl from "../../components/ui/AppSegmentedControl";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { 
-  FadeInDown, 
-  FadeInUp,
-  Layout,
-} from "react-native-reanimated";
+import SectionCard from "../../components/ui/SectionCard";
+import Typography from "../../components/ui/Typography";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function AboutScreen() {
   const { themeMode, setThemeMode, colors, isDark } = useTheme();
@@ -46,26 +34,41 @@ export default function AboutScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
-      <ScrollView 
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}
-        <Animated.View 
+        <Animated.View
           entering={FadeInUp.duration(600).springify()}
           style={styles.header}
         >
-          <View style={[styles.logoContainer, { backgroundColor: isDark ? "#1F2937" : "#E2E8F0" }]}>
+          <View
+            style={[
+              styles.logoContainer,
+              { backgroundColor: isDark ? "#1F2937" : "#E2E8F0" },
+            ]}
+          >
             <Ionicons name="calculator" size={40} color="#F97316" />
           </View>
-          <Typography variant="display" style={styles.title}>InsurP</Typography>
-          <Typography variant="caption" style={styles.version}>Version 1.0.0 (Stable)</Typography>
+          <Typography variant="display" style={styles.title}>
+            Insurence Calculator
+          </Typography>
+          <Typography variant="caption" style={styles.version}>
+            Version 2.0.0 (Stable)
+          </Typography>
         </Animated.View>
 
         {/* Theme Settings */}
         <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-          <SectionCard title="Appearance" subtitle="Customize your visual experience">
+          <SectionCard
+            title="Appearance"
+            subtitle="Customize your visual experience"
+          >
             <AppSegmentedControl
               label="Theme Mode"
               options={themeOptions}
@@ -80,18 +83,24 @@ export default function AboutScreen() {
           <SectionCard title="Developer" subtitle="Crafted with ❤️ by Rabin">
             <View style={styles.devProfile}>
               <View style={[styles.avatar, { borderColor: colors.border }]}>
-                 <Ionicons name="person" size={32} color={colors.textSecondary} />
+                <Ionicons
+                  name="person"
+                  size={32}
+                  color={colors.textSecondary}
+                />
               </View>
               <View style={styles.devMeta}>
                 <Typography variant="subheading">Rabin016</Typography>
                 <Typography variant="caption">Full Stack Developer</Typography>
               </View>
             </View>
-            <AppButton 
-              title="GitHub Profile" 
+            <AppButton
+              title="GitHub Profile"
               onPress={handleGithubPress}
               variant="secondary"
-              icon={<Ionicons name="logo-github" size={18} color={colors.text} />}
+              icon={
+                <Ionicons name="logo-github" size={18} color={colors.text} />
+              }
             />
           </SectionCard>
         </Animated.View>
@@ -100,21 +109,29 @@ export default function AboutScreen() {
         <Animated.View entering={FadeInDown.delay(400).duration(500)}>
           <SectionCard title="About InsurP" accent>
             <Typography variant="body" style={styles.description}>
-              InsurP is a professional-grade insurance premium calculator designed for Marine, Fire, and Motor transport. Built for accuracy and speed within the Bangladesh insurance sector.
+              InsurP is a professional-grade insurance premium calculator
+              designed for Marine, Fire, and Motor transport. Built for accuracy
+              and speed within the Bangladesh insurance sector.
             </Typography>
             <View style={styles.statsRow}>
               <View style={styles.stat}>
-                <Typography variant="subheading" color="#F97316">3+</Typography>
+                <Typography variant="subheading" color="#F97316">
+                  3+
+                </Typography>
                 <Typography variant="caption">Modules</Typography>
               </View>
               <View style={styles.divider} />
               <View style={styles.stat}>
-                <Typography variant="subheading" color="#F97316">100%</Typography>
+                <Typography variant="subheading" color="#F97316">
+                  100%
+                </Typography>
                 <Typography variant="caption">Offline</Typography>
               </View>
               <View style={styles.divider} />
               <View style={styles.stat}>
-                <Typography variant="subheading" color="#F97316">BD</Typography>
+                <Typography variant="subheading" color="#F97316">
+                  BD
+                </Typography>
                 <Typography variant="caption">Standards</Typography>
               </View>
             </View>
@@ -123,15 +140,17 @@ export default function AboutScreen() {
 
         {/* Actions */}
         <Animated.View entering={FadeInDown.delay(500).duration(500)}>
-          <AppButton 
-            title="Share with Colleagues" 
+          <AppButton
+            title="Share with Colleagues"
             onPress={handleShareApp}
             variant="ghost"
             style={styles.shareBtn}
-            icon={<Ionicons name="share-social-outline" size={18} color="#F97316" />}
+            icon={
+              <Ionicons name="share-social-outline" size={18} color="#F97316" />
+            }
           />
         </Animated.View>
-        
+
         <View style={styles.footer}>
           <Typography variant="caption" style={styles.copyright}>
             © 2026 InsurP. All rights reserved.

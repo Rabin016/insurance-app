@@ -24,9 +24,9 @@ export const CAPACITY_RATES: Record<CapacityClass, number> = {
 // These represent the percentage deducted from the Gross Own Damage
 // ─────────────────────────────────────────────────────────────────────────────
 export const EXCLUSION_PERILS_OPTIONS = [
-  { label: "Flood & Cyclone", value: "FLOOD_CYCLONE", rate: 0.25 },
-  { label: "Earthquake", value: "EARTHQUAKE", rate: 0.25 },
-  { label: "R&SD", value: "RSD", rate: 0.50 },
+  { label: "Flood & Cyclone", value: "FLOOD_CYCLONE", rate: 0.25, icon: "water-outline" },
+  { label: "Earthquake", value: "EARTHQUAKE", rate: 0.25, icon: "pulse-outline" },
+  { label: "R&SD", value: "RSD", rate: 0.50, icon: "warning-outline" },
 ] as const;
 
 export type ExclusionPeril = (typeof EXCLUSION_PERILS_OPTIONS)[number]["value"];

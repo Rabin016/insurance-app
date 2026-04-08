@@ -25,7 +25,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import AppInput from "../components/ui/AppInput";
-import AppMultiSelect from "../components/ui/AppMultiSelect";
+import AppCardMultiSelect from "../components/ui/AppCardMultiSelect";
 import AppSegmentedControl from "../components/ui/AppSegmentedControl";
 import AppButton from "../components/ui/AppButton";
 import SectionCard from "../components/ui/SectionCard";
@@ -177,13 +177,12 @@ export default function MotorScreen() {
 
           <Animated.View entering={FadeInDown.duration(350).delay(200)}>
             <SectionCard title="Deductions & Exclusions">
-              <AppMultiSelect
+              <AppCardMultiSelect
                 label="Less on FIV (Exclusions)"
                 labelIcon="shield-half-outline"
-                options={EXCLUSION_PERILS_OPTIONS as any}
+                options={EXCLUSION_PERILS_OPTIONS}
                 values={selectedExclusions}
                 onChange={(vals) => { setSelectedExclusions(vals); setResult(null); }}
-                placeholder="Select exclusions"
               />
 
               <AppInput
