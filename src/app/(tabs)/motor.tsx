@@ -1,11 +1,6 @@
-import PlaceholderPage from "../../components/ui/PlaceholderPage";
+import React from 'react';
+import MotorScreen from '../../screens/MotorScreen';
 
 export default function MotorTab() {
-  return (
-    <PlaceholderPage
-      icon="car-outline"
-      title="Motor Insurance"
-      message="I will instruct you later."
-    />
-  );
+  return <MotorScreen />;
 }
