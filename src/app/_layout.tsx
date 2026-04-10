@@ -5,13 +5,20 @@ import {
   Inter_700Bold,
   useFonts,
 } from "@expo-google-fonts/inter";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavThemeProvider,
+} from "@react-navigation/native";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { ThemeProvider as CustomThemeProvider, useTheme } from "../context/ThemeContext";
-import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from "@react-navigation/native";
+import {
+  ThemeProvider as CustomThemeProvider,
+  useTheme,
+} from "../context/ThemeContext";
 
 // Keep splash screen visible while fonts load
 SplashScreen.preventAutoHideAsync();
@@ -19,32 +26,39 @@ SplashScreen.preventAutoHideAsync();
 function LayoutContent() {
   const { isDark, colors } = useTheme();
 
-  const NavTheme = isDark ? {
-    ...DarkTheme,
-    colors: {
-      ...DarkTheme.colors,
-      background: colors.background,
-      card: colors.card,
-      text: colors.text,
-      border: colors.border,
-      primary: "#F97316",
-    },
-  } : {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      background: colors.background,
-      card: colors.card,
-      text: colors.text,
-      border: colors.border,
-      primary: "#F97316",
-    },
-  };
+  const NavTheme = isDark
+    ? {
+        ...DarkTheme,
+        colors: {
+          ...DarkTheme.colors,
+          background: colors.background,
+          card: colors.card,
+          text: colors.text,
+          border: colors.border,
+          primary: "#F97316",
+        },
+      }
+    : {
+        ...DefaultTheme,
+        colors: {
+          ...DefaultTheme.colors,
+          background: colors.background,
+          card: colors.card,
+          text: colors.text,
+          border: colors.border,
+          primary: "#F97316",
+        },
+      };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: colors.background }}
+    >
       <NavThemeProvider value={NavTheme}>
-        <StatusBar style={isDark ? "light" : "dark"} backgroundColor={colors.background} />
+        <StatusBar
+          style={isDark ? "light" : "dark"}
+          backgroundColor={colors.background}
+        />
         <Stack screenOptions={{ headerShown: false }} />
       </NavThemeProvider>
     </GestureHandlerRootView>

@@ -56,7 +56,7 @@ export default function AboutScreen() {
             <Ionicons name="calculator" size={40} color="#F97316" />
           </View>
           <Typography variant="display" style={styles.title}>
-            Insurence Calculator
+            Insurance Calculator
           </Typography>
           <Typography variant="caption" style={styles.version}>
             Version 2.0.0 (Stable)
@@ -107,7 +107,7 @@ export default function AboutScreen() {
 
         {/* App Info */}
         <Animated.View entering={FadeInDown.delay(400).duration(500)}>
-          <SectionCard title="About InsurP" accent>
+          <SectionCard title="About Insurance Calculator" accent>
             <Typography variant="body" style={styles.description}>
               InsurP is a professional-grade insurance premium calculator
               designed for Marine, Fire, and Motor transport. Built for accuracy
