@@ -59,7 +59,7 @@ export default function AboutScreen() {
             Insurance Calculator
           </Typography>
           <Typography variant="caption" style={styles.version}>
-            Version 2.0.0 (Stable)
+            Version 2.1.0 (Stable)
           </Typography>
         </Animated.View>
 

@@ -1,1 +1,0 @@
-I want to refactor the codebase of insurP. Remove any duplicate code and make it more modular. Remove any unused code. So that it can be easily scalable and maintainable. Don't change the functionality of the application. Use the best and modern practices of software engineering. Use clean and latest code practices.
