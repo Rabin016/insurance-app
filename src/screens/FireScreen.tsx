@@ -24,7 +24,10 @@ import Animated, {
   ZoomIn,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { AppScreenWithHeader } from "../components/ui/AppScreen";
+import ScreenHeader from "../components/ui/ScreenHeader";
+import ResultRow from "../components/ui/ResultRow";
 
 import AppInput from "../components/ui/AppInput";
 import AppSelect, { AppSelectRef } from "../components/ui/AppSelect";
@@ -189,7 +192,6 @@ function PremisesCard({
 // ─────────────────────────────────────────────────────────────────────────────
 export default function FireScreen() {
   const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
 
   const limitRef = useRef<TextInput>(null);
@@ -276,34 +278,16 @@ export default function FireScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
-      behavior={Platform.OS === "android" ? "height" : "padding"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    <AppScreenWithHeader
+      scrollRef={scrollRef}
+      header={
+        <ScreenHeader 
+          title="Fire Insurance" 
+          subtitle="PREMIUM CALCULATOR" 
+          iconName="flame" 
+        />
+      }
     >
-      <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <Animated.View entering={FadeInUp.duration(400)} style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={[styles.fireIconBadge, { backgroundColor: isDark ? "rgba(249,115,22,0.15)" : "rgba(249,115,22,0.1)", borderColor: isDark ? "rgba(249,115,22,0.3)" : "rgba(249,115,22,0.2)" }]}>
-                <Ionicons name="flame" size={20} color="#F97316" />
-              </View>
-              <View>
-                <Typography variant="caption" color="#F97316" style={{ letterSpacing: 1.2, fontWeight: "700" }}>PREMIUM CALCULATOR</Typography>
-                <Typography variant="heading">Fire Insurance</Typography>
-              </View>
-            </View>
-          </View>
-          <View style={[styles.headerBorder, { backgroundColor: colors.border }]} />
-        </Animated.View>
-
-        <ScrollView
-          ref={scrollRef} 
-          style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
-          showsVerticalScrollIndicator={false} 
-          keyboardShouldPersistTaps="handled"
-        >
           <Animated.View entering={FadeInDown.duration(350).delay(100)}>
             <SectionCard title="Basic Information" accent>
               <AppInput ref={limitRef} label="Limit Amount" labelIcon="cash-outline" value={limitAmount} onChangeText={(v) => { setLimitAmount(v); setResult(null); }} prefix="BDT" placeholder="500,000" returnKeyType="next" onSubmitEditing={() => toleranceRef.current?.focus()} />
@@ -365,21 +349,10 @@ export default function FireScreen() {
           </View>
 
           {result && <ResultCard result={result} premises={premises} />}
-        </ScrollView>
-      </View>
-    </KeyboardAvoidingView>
+    </AppScreenWithHeader>
   );
 }
 
-function DetailRow({ label, value, color }: { label: string; value: string; color?: string }) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.resultRow}>
-      <Typography variant="body" color={color || colors.textSecondary}>{label}</Typography>
-      <Typography variant="body" color={color || colors.text} style={{ fontWeight: "600", textAlign: "right" }}>{value}</Typography>
-    </View>
-  );
-}
 
 function ResultCard({ result, premises }: { result: PremiumResult; premises: PremisesEntry[] }) {
   const { isDark, colors } = useTheme();
@@ -396,7 +369,7 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
           <Ionicons name="receipt-outline" size={24} color="#F97316" />
         </View>
 
-        <DetailRow label="Total Sum Insured" value={`BDT ${formatCurrency(result.totalSumInsured)}`} />
+        <ResultRow label="Total Sum Insured" value={`BDT ${formatCurrency(result.totalSumInsured)}`} />
         
         <View style={styles.breakdownHeader}>
           <Typography variant="caption" color="#F97316" style={{ textTransform: "uppercase", letterSpacing: 1 }}>Premium Breakdown</Typography>
@@ -418,19 +391,19 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         
-        <DetailRow label="Net Premium" value={`BDT ${formatCurrency(result.totalNetPremium)}`} />
-        <DetailRow label="VAT (15%)" value={`BDT ${formatCurrency(result.vatAmount)}`} />
+        <ResultRow label="Net Premium" value={`BDT ${formatCurrency(result.totalNetPremium)}`} />
+        <ResultRow label="VAT (15%)" value={`BDT ${formatCurrency(result.vatAmount)}`} />
         
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         
         {result.discountAmount > 0 ? (
           <>
-            <DetailRow 
+            <ResultRow 
               label="Total (Without Discount)" 
               value={`BDT ${formatCurrency(totalBeforeDiscount)}`} 
-              color="#F97316"
+              primary
             />
-            <DetailRow 
+            <ResultRow 
               label={`Discount (${result.discountAmount > 0 ? "Applied" : ""})`} 
               value={`- BDT ${formatCurrency(result.discountAmount)}`} 
               color="#10B981"
@@ -451,14 +424,6 @@ function ResultCard({ result, premises }: { result: PremiumResult; premises: Pre
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 8 },
-  headerContent: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 12 },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  fireIconBadge: { width: 38, height: 38, borderRadius: 10, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  headerBorder: { height: 1.5, marginHorizontal: -20 },
-  scroll: { flex: 1 },
-  scrollContent: { padding: 14, gap: 10 },
   sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: -4, marginTop: 4 },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   sectionDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#F97316" },
@@ -468,7 +433,6 @@ const styles = StyleSheet.create({
   actionButtons: { gap: 10, marginTop: 4 },
   resultCard: { borderWidth: 1.5, marginTop: 10 },
   resultIcon: { alignSelf: "center", marginBottom: 12, width: 50, height: 50, borderRadius: 25, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)", alignItems: "center", justifyContent: "center" },
-  resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
   breakdownHeader: { marginTop: 8, marginBottom: 4 },
   premisesResultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6, paddingHorizontal: 8, borderRadius: 8, marginBottom: 4, borderWidth: 1 },
   divider: { height: 1, marginVertical: 8, opacity: 0.5 },

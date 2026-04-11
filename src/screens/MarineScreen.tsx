@@ -23,7 +23,10 @@ import Animated, {
   ZoomIn,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { AppScreenWithHeader } from "../components/ui/AppScreen";
+import ScreenHeader from "../components/ui/ScreenHeader";
+import ResultRow from "../components/ui/ResultRow";
 
 import AppInput from "../components/ui/AppInput";
 import AppSelect from "../components/ui/AppSelect";
@@ -49,7 +52,6 @@ import { useTheme } from "../context/ThemeContext";
 
 export default function MarineScreen() {
   const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   
   // Refs
@@ -132,35 +134,16 @@ export default function MarineScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
-      behavior={Platform.OS === "android" ? "height" : "padding"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    <AppScreenWithHeader
+      scrollRef={scrollRef}
+      header={
+        <ScreenHeader 
+          title="Marine Insurance" 
+          subtitle="PREMIUM CALCULATOR" 
+          iconName="boat-outline" 
+        />
+      }
     >
-      <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        {/* Header */}
-        <Animated.View entering={FadeInUp.duration(400)} style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={[styles.marineIconBadge, { backgroundColor: isDark ? "rgba(249,115,22,0.15)" : "rgba(249,115,22,0.1)", borderColor: isDark ? "rgba(249,115,22,0.3)" : "rgba(249,115,22,0.2)" }]}>
-                <Ionicons name="boat-outline" size={20} color="#F97316" />
-              </View>
-              <View>
-                <Typography variant="caption" color="#F97316" style={{ letterSpacing: 1.2, fontWeight: "700" }}>PREMIUM CALCULATOR</Typography>
-                <Typography variant="heading">Marine Insurance</Typography>
-              </View>
-            </View>
-          </View>
-          <View style={[styles.headerBorder, { backgroundColor: colors.border }]} />
-        </Animated.View>
-
-        <ScrollView
-          ref={scrollRef}
-          style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
           <Animated.View entering={FadeInDown.duration(350).delay(100)}>
             <SectionCard title="Value & Currency" accent>
               <AppInput
@@ -275,21 +258,10 @@ export default function MarineScreen() {
           </View>
 
           {result && <MarineResultCard result={result} />}
-        </ScrollView>
-      </View>
-    </KeyboardAvoidingView>
+    </AppScreenWithHeader>
   );
 }
 
-function ResultRow({ label, value, isTsi = false, color }: { label: string; value: string; isTsi?: boolean; color?: string }) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.resultRow}>
-      <Typography variant="body" color={color || (isTsi ? "#F97316" : colors.textSecondary)} style={isTsi && { fontWeight: "700" }}>{label}</Typography>
-      <Typography variant="body" color={color || colors.text} style={{ fontWeight: "600", textAlign: "right" }}>{value}</Typography>
-    </View>
-  );
-}
 
 function MarineResultCard({ result }: { result: MarineResult }) {
   const { isDark, colors } = useTheme();
@@ -307,7 +279,7 @@ function MarineResultCard({ result }: { result: MarineResult }) {
           <Ionicons name="receipt-outline" size={24} color="#F97316" />
         </View>
 
-        <ResultRow label="TSI in USD" value={`$ ${formatCurrencyMarine(result.tsiInForeign)}`} isTsi />
+        <ResultRow label="TSI in USD" value={`$ ${formatCurrencyMarine(result.tsiInForeign)}`} primary />
         <ResultRow label="TSI in BDT" value={`BDT ${formatCurrencyMarine(result.tsiInBDT)}`} />
         
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -351,21 +323,9 @@ function MarineResultCard({ result }: { result: MarineResult }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 8 },
-  headerContent: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 12 },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  marineIconBadge: { 
-    width: 38, height: 38, borderRadius: 10, 
-    borderWidth: 1, alignItems: "center", justifyContent: "center" 
-  },
-  headerBorder: { height: 1.5, marginHorizontal: -20 },
-  scroll: { flex: 1 },
-  scrollContent: { padding: 14, gap: 10 },
   actionButtons: { gap: 10, marginTop: 4 },
   resultCard: { borderWidth: 1.5, marginTop: 10 },
   resultIcon: { alignSelf: "center", marginBottom: 12, width: 50, height: 50, borderRadius: 25, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)", alignItems: "center", justifyContent: "center" },
-  resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
   divider: { height: 1, marginVertical: 8, opacity: 0.5 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4 },
 });
